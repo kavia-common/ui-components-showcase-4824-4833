@@ -56,42 +56,49 @@ function App() {
           }}
         >
           <div className="mx-auto max-w-7xl px-4 py-4">
-            {/* Brand + simple nav only */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold" aria-hidden="true">
+            {/* Single-row navbar: brand left, items right; wraps on narrow screens */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              {/* Brand / App name - left aligned */}
+              <div className="flex items-center gap-3 min-w-[12rem]">
+                <div
+                  className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold"
+                  aria-hidden="true"
+                >
                   UI
                 </div>
                 <div className="text-white">
                   <h1 className="text-xl font-semibold">Components Showcase</h1>
                 </div>
               </div>
-            </div>
 
-            {/* Top navbar tabs: component names only */}
-            <nav className="mt-4 overflow-x-auto" aria-label="Component navigation">
-              <ul className="flex items-center gap-2">
-                {items.map((it) => {
-                  const isActive = active === it.key;
-                  return (
-                    <li key={it.key}>
-                      <button
-                        onClick={() => setActive(it.key)}
-                        className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-colors backdrop-blur
-                          ${
-                            isActive
-                              ? "bg-white text-[var(--color-text)] shadow"
-                              : "text-white/90 hover:bg-white/10"
-                          }`}
-                        aria-current={isActive ? "page" : undefined}
-                      >
-                        {it.label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
+              {/* Component nav items - right aligned */}
+              <nav
+                className="flex-1 overflow-x-auto"
+                aria-label="Component navigation"
+              >
+                <ul className="flex items-center justify-end gap-2">
+                  {items.map((it) => {
+                    const isActive = active === it.key;
+                    return (
+                      <li key={it.key}>
+                        <button
+                          onClick={() => setActive(it.key)}
+                          className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-colors backdrop-blur
+                            ${
+                              isActive
+                                ? "bg-white text-[var(--color-text)] shadow"
+                                : "text-white/90 hover:bg-white/10"
+                            }`}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          {it.label}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
           </div>
         </header>
 
