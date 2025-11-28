@@ -46,7 +46,7 @@ export default function Hero() {
       }}
     >
       {/* Centered container (box) with constrained max-width and responsive paddings */}
-      <div className="mx-auto max-w-[48rem] px-4 md:px-5 lg:px-6 py-8 md:py-12 lg:py-14">
+      <div className="mx-auto max-w-[42rem] px-3 md:px-4 lg:px-5 py-8 md:py-12 lg:py-14">
         <div className="text-center">
           {/* Announcement pill */}
           <div
