@@ -50,10 +50,13 @@ export default function Hero() {
           radial-gradient(1000px 500px at 80% 70%, ${tokens.washPink}, rgba(255,255,255,0) 60%),
           ${tokens.bgCanvas}
         `,
+        // Slightly reduce outer vertical spacing to lower the section height
+        paddingTop: "0.6rem",
+        paddingBottom: "0.6rem",
       }}
     >
       {/* Centered container (box) with constrained max-width and responsive paddings */}
-      <div className="mx-auto max-w-[26rem] px-2 md:px-2.5 lg:px-3.5 py-3.5 md:py-5 lg:py-6">
+      <div className="mx-auto max-w-[24rem] px-2 md:px-2.5 lg:px-3.5 py-3.5 md:py-5 lg:py-6">
         {/* Left-aligned layout per request while maintaining existing structure */}
         <div className="text-left">
           {/* Announcement pill */}
