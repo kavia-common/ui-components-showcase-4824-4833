@@ -7,3 +7,6 @@
   --color-surface: #ffffff;
   --color-text: #111827;
 }
+
+/* App-level gradients are applied inline in App.js.
+   If needed globally, consider using .page-gradient/.header-gradient defined in index.css */
