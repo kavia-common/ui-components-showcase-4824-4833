@@ -42,7 +42,7 @@ export default function Hero() {
     <section
       role="region"
       aria-label="Hero"
-      className="relative overflow-hidden rounded-2xl shadow-soft"
+      className="relative overflow-hidden rounded-xl shadow-soft"
       // Decorative background as soft radial washes over white canvas.
       style={{
         background: `
@@ -53,7 +53,7 @@ export default function Hero() {
       }}
     >
       {/* Centered container (box) with constrained max-width and responsive paddings */}
-      <div className="mx-auto max-w-[32rem] px-1.5 md:px-2.5 lg:px-[12px] py-6 md:py-8 lg:py-10">
+      <div className="mx-auto max-w-[28rem] px-2 md:px-3 lg:px-4 py-4 md:py-6 lg:py-7">
         {/* Left-aligned layout per request while maintaining existing structure */}
         <div className="text-left">
           {/* Announcement pill */}
