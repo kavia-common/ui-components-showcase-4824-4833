@@ -24,6 +24,13 @@ export default function Hero() {
     textPrimary: "#111827", // neutral-900
     textSecondary: "#4B5563", // neutral-600
 
+    // Header gradient colors (reference from App header)
+    // Header gradient: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)
+    headerStart: "#af2497",
+    headerMid: "#902d9a",
+    headerEnd: "#1840a0",
+
+    // Keep existing accent tokens for other uses
     accent: "#7C3AED", // violet-600
     accentHover: "#6D28D9", // violet-700
     accentBorder: "rgba(124, 58, 237, 0.20)",
@@ -77,7 +84,7 @@ export default function Hero() {
           >
             UI Components
             <br />
-            <span style={{ color: tokens.accent }}>Showcase</span>
+            <span style={{ color: tokens.headerStart }}>Showcase</span>
           </h1>
 
           {/* Supporting paragraph with constrained measure; content replaced exactly */}
@@ -97,18 +104,19 @@ export default function Hero() {
             <a
               href={appUrl}
               role="button"
-              className="inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
+              className="inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
               style={{
                 background: tokens.accent,
                 boxShadow: `0 1px 2px ${tokens.btnShadow}`,
                 transition: "background-color 150ms ease",
+                color: tokens.headerStart, // text color matches header start color
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = tokens.accentHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = tokens.accent)
-              }
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = tokens.accentHover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = tokens.accent;
+              }}
             >
               Explore Demos
             </a>
