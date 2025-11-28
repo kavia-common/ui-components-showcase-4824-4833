@@ -50,7 +50,7 @@ export default function Hero() {
       }}
     >
       {/* Container widths and vertical rhythm - scaled down more */}
-      <div className="mx-auto max-w-[58rem] px-4 md:px-5 lg:px-6 py-10 md:py-14 lg:py-16 text-center">
+      <div className="mx-auto max-w-[48rem] px-3 md:px-4 lg:px-5 py-8 md:py-10 lg:py-12 text-center">
         {/* Announcement pill - slightly smaller type/spacing */}
         <div
           className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] sm:text-[12.5px] font-medium"
@@ -90,7 +90,7 @@ export default function Hero() {
 
         {/* Supporting paragraph - smaller and tighter */}
         <p
-          className="mx-auto mt-3.5 max-w-xl"
+          className="mx-auto mt-3 max-w-xl"
           style={{
             color: tokens.textSecondary,
             fontSize: "15px",
@@ -102,7 +102,7 @@ export default function Hero() {
         </p>
 
         {/* CTA row - reduced spacing and button size */}
-        <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
+        <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-3 sm:gap-3.5">
           <a
             href={appUrl}
             role="button"
