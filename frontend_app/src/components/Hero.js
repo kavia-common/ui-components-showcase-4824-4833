@@ -24,7 +24,7 @@ export default function Hero() {
       aria-labelledby="hero-heading"
       className="relative overflow-hidden rounded-2xl shadow-soft"
       style={{
-        // subtle radial + linear background per notes
+        // Subtle radial + linear background
         background:
           "radial-gradient(100% 100% at 0% 0%, rgba(99,102,241,0.20) 0%, transparent 60%), linear-gradient(180deg, #0B1020 0%, #070B16 100%)",
       }}
@@ -33,7 +33,7 @@ export default function Hero() {
       <div className="pointer-events-none absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-indigo-500/20 blur-3xl" />
       <div className="pointer-events-none absolute -left-64 -bottom-20 h-[240px] w-[60%] bg-gradient-to-r from-indigo-400/30 to-transparent blur-2xl opacity-60" />
 
-      {/* Container */}
+      {/* Main hero content only */}
       <div className="relative mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-16 md:py-20 lg:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-y-10 lg:gap-8">
           {/* Left column: Text stack */}
@@ -95,11 +95,6 @@ export default function Hero() {
               >
                 Open App
               </a>
-            </div>
-
-            {/* Optional trust row */}
-            <div className="mt-4 text-xs text-slate-400">
-              Trusted by teams building modern web apps
             </div>
           </div>
 
