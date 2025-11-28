@@ -47,3 +47,8 @@ body {
 .footer-gradient {
   background: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%);
 }
+
+/* subtle top border utility (can be reused) */
+.top-separator {
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
