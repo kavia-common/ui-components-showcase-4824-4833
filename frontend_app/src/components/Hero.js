@@ -84,7 +84,17 @@ export default function Hero() {
           >
             UI Components
             <br />
-            <span style={{ color: tokens.headerStart }}>Showcase</span>
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                background:
+                  "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Showcase
+            </span>
           </h1>
 
           {/* Supporting paragraph with constrained measure; content replaced exactly */}
@@ -109,7 +119,6 @@ export default function Hero() {
                 background: tokens.accent,
                 boxShadow: `0 1px 2px ${tokens.btnShadow}`,
                 transition: "background-color 150ms ease",
-                color: tokens.headerStart, // text color matches header start color
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = tokens.accentHover;
@@ -118,7 +127,17 @@ export default function Hero() {
                 e.currentTarget.style.background = tokens.accent;
               }}
             >
-              Explore Demos
+              <span
+                className="bg-clip-text text-transparent"
+                style={{
+                  background:
+                    "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Explore Demos
+              </span>
             </a>
 
             <a
