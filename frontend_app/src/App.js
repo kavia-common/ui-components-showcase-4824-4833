@@ -8,6 +8,7 @@ import Breadcrumbs from "./components/Breadcrumbs";
 import Carousel from "./components/Carousel";
 import ChatbotStub from "./components/ChatbotStub";
 import FormWizard from "./components/FormWizard";
+import Testimonial from "./components/Testimonial";
 import ToastDemo from "./components/ToastDemo";
 import { ToastProvider } from "./components/ToastProvider";
 
@@ -31,6 +32,7 @@ function App() {
       { key: "carousel", label: "Carousel" },
       { key: "chatbot", label: "Chatbot (UI)" },
       { key: "wizard", label: "Form Wizard" },
+      { key: "testimonial", label: "Testimonial" },
       { key: "toast", label: "Toast" },
     ],
     []
@@ -109,6 +111,7 @@ function App() {
           {active === "carousel" && <Carousel />}
           {active === "chatbot" && <ChatbotStub />}
           {active === "wizard" && <FormWizard />}
+          {active === "testimonial" && <Testimonial />}
           {active === "toast" && <ToastDemo />}
 
           {/* Footer with gradient and polished layout */}
