@@ -37,14 +37,16 @@ export default function Hero() {
         `,
       }}
     >
-      <div className="mx-auto max-w-[72rem] px-4 md:px-6 lg:px-8 py-14 md:py-20 lg:py-24 text-center">
-        {/* Announcement pill */}
+      {/* Slightly reduced container max-width and vertical padding */}
+      <div className="mx-auto max-w-[68rem] px-4 md:px-6 lg:px-8 py-12 md:py-18 lg:py-20 text-center">
+        {/* Announcement pill - keep scale but it's already compact */}
         <div
           className="inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm font-medium"
           style={{
             background: "rgba(124, 58, 237, 0.08)",
             border: `1px solid ${tokens.accentBorder}`,
             color: tokens.textPrimary,
+            lineHeight: "20px",
           }}
         >
           <span>Announcing our next round of funding.</span>
@@ -57,15 +59,16 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* Heading */}
+        {/* Heading - reduce size by one step and tighten line-height */}
         <h1
           id="hero-heading"
-          className="mt-6 font-extrabold tracking-tight text-neutral-900"
+          className="mt-5 font-extrabold tracking-tight text-neutral-900"
           style={{
             color: tokens.textPrimary,
             letterSpacing: "-0.02em",
-            lineHeight: 1.08,
-            fontSize: "clamp(36px, 5.2vw, 56px)",
+            lineHeight: 1.06,
+            // previously clamp(36px, 5.2vw, 56px) -> reduce upper clamp and vw slightly
+            fontSize: "clamp(32px, 4.6vw, 48px)",
           }}
         >
           Data to enrich your
@@ -73,25 +76,25 @@ export default function Hero() {
           online business
         </h1>
 
-        {/* Supporting paragraph */}
+        {/* Supporting paragraph - slightly smaller and tighter, smaller max width */}
         <p
-          className="mx-auto mt-5 max-w-3xl"
+          className="mx-auto mt-4 max-w-2xl"
           style={{
             color: tokens.textSecondary,
-            fontSize: "18px",
-            lineHeight: "28px",
+            fontSize: "16px",
+            lineHeight: "26px",
           }}
         >
           Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem
           cupidatat commodo. Et sunt eu ut non esse fugiat veniam occaecat.
         </p>
 
-        {/* CTA row */}
-        <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-6">
+        {/* CTA row - reduce vertical spacing and gap slightly */}
+        <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-5">
           <a
             href={appUrl}
             role="button"
-            className="inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
+            className="inline-flex h-10 items-center justify-center rounded-full px-4 text-[13px] font-semibold text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
             style={{
               background: tokens.accent,
               boxShadow: `0 1px 2px ${tokens.btnShadow}`,
@@ -104,8 +107,8 @@ export default function Hero() {
 
           <a
             href="#accordion"
-            className="text-sm font-semibold hover:underline"
-            style={{ color: tokens.textPrimary }}
+            className="text-[13px] font-semibold hover:underline"
+            style={{ color: tokens.textPrimary, lineHeight: "20px" }}
           >
             Learn more →
           </a>
