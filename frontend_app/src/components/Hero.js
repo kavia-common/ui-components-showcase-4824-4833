@@ -148,13 +148,57 @@ export default function Hero() {
               </span>
             </a>
 
-            <a
-              href="#accordion"
-              className="text-sm font-semibold hover:underline"
-              style={{ color: tokens.textPrimary }}
+            {/* Secondary CTA with gradient border */}
+            <span
+              className="inline-flex rounded-full p-[1px]"
+              style={{
+                background:
+                  "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+                boxShadow: "0 0 0 0 rgba(0,0,0,0)",
+                transition: "filter 150ms ease, box-shadow 150ms ease",
+              }}
             >
-              Try Outlook
-            </a>
+              <a
+                href="#accordion"
+                className="text-sm font-semibold rounded-full px-4 h-11 inline-flex items-center justify-center"
+                style={{
+                  color: tokens.textPrimary,
+                  backgroundColor: "#ffffff",
+                }}
+                onMouseEnter={(e) => {
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.style.filter = "brightness(1.05)";
+                    parent.style.boxShadow =
+                      "0 6px 16px rgba(24, 64, 160, 0.18)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.style.filter = "brightness(1)";
+                    parent.style.boxShadow = "0 0 0 0 rgba(0,0,0,0)";
+                  }
+                }}
+                onFocus={(e) => {
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.style.filter = "brightness(1.05)";
+                    parent.style.boxShadow =
+                      "0 6px 16px rgba(24, 64, 160, 0.18)";
+                  }
+                }}
+                onBlur={(e) => {
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.style.filter = "brightness(1)";
+                    parent.style.boxShadow = "0 0 0 0 rgba(0,0,0,0)";
+                  }
+                }}
+              >
+                Try Outlook
+              </a>
+            </span>
           </div>
 
           {/* Helper / supporting hint below CTAs */}
