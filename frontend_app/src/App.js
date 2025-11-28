@@ -55,7 +55,7 @@ function App() {
               "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
           }}
         >
-          <div className="mx-auto max-w-7xl px-4 py-4">
+          <div className="mx-auto max-w-[88rem] px-4 py-4">
             {/* Single-row navbar: brand left, items right; wraps on narrow screens */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {/* Brand / App name - left aligned */}
@@ -124,7 +124,7 @@ function App() {
           >
             {/* subtle top separation using semi-transparent border and shadow inset */}
             <div className="rounded-2xl border-t border-white/10">
-              <div className="mx-auto max-w-7xl px-4 py-5">
+              <div className="mx-auto max-w-[88rem] px-4 py-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   {/* Left: App name + short tagline */}
                   <div className="min-w-0">
