@@ -116,24 +116,32 @@ export default function Hero() {
               role="button"
               className="inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
               style={{
-                background: tokens.accent,
+                // Apply the specified gradient to the button background
+                background:
+                  "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
                 boxShadow: `0 1px 2px ${tokens.btnShadow}`,
-                transition: "background-color 150ms ease",
+                transition: "filter 150ms ease",
+                color: "#ffffff",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = tokens.accentHover;
+                // Subtle brightness increase on hover
+                e.currentTarget.style.filter = "brightness(1.06)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = tokens.accent;
+                e.currentTarget.style.filter = "brightness(1)";
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.filter = "brightness(1.06)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.filter = "brightness(1)";
               }}
             >
               <span
-                className="bg-clip-text text-transparent"
+                // Remove gradient text styling to avoid conflict; keep readable white text
+                className=""
                 style={{
-                  background:
-                    "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  color: "#ffffff",
                 }}
               >
                 Explore Demos
