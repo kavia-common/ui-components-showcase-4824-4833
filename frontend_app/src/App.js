@@ -22,10 +22,7 @@ function App() {
    */
   const [active, setActive] = useState("hero");
 
-  const backendURL = process.env.REACT_APP_BACKEND_URL || "";
-  const apiBase = process.env.REACT_APP_API_BASE || "";
-  const mode = process.env.REACT_APP_NODE_ENV || "development";
-
+  // Only component demo items are kept for the navbar as per requirements
   const items = useMemo(
     () => [
       { key: "hero", label: "Hero" },
@@ -59,37 +56,20 @@ function App() {
           }}
         >
           <div className="mx-auto max-w-7xl px-4 py-4">
+            {/* Brand + simple nav only */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold">
+                <div className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold" aria-hidden="true">
                   UI
                 </div>
                 <div className="text-white">
                   <h1 className="text-xl font-semibold">Components Showcase</h1>
-                  <p className="text-xs opacity-80">Top Navbar · Gradient Shell</p>
                 </div>
-              </div>
-
-              {/* Environment details */}
-              <div className="hidden md:flex items-center gap-4 text-sm text-white/90">
-                {backendURL && (
-                  <span>
-                    Backend: <code className="text-white">{backendURL}</code>
-                  </span>
-                )}
-                {apiBase && (
-                  <span>
-                    API: <code className="text-white">{apiBase}</code>
-                  </span>
-                )}
-                <span className="hidden sm:inline">
-                  Mode: <span className="font-medium">{mode}</span>
-                </span>
               </div>
             </div>
 
-            {/* Top navbar tabs */}
-            <nav className="mt-4 overflow-x-auto">
+            {/* Top navbar tabs: component names only */}
+            <nav className="mt-4 overflow-x-auto" aria-label="Component navigation">
               <ul className="flex items-center gap-2">
                 {items.map((it) => {
                   const isActive = active === it.key;
