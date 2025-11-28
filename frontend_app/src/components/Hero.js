@@ -47,7 +47,8 @@ export default function Hero() {
     >
       {/* Centered container (box) with constrained max-width and responsive paddings */}
       <div className="mx-auto max-w-[32rem] px-1.5 md:px-2.5 lg:px-[12px] py-6 md:py-8 lg:py-10">
-        <div className="text-center">
+        {/* Left-aligned layout per request while maintaining existing structure */}
+        <div className="text-left">
           {/* Announcement pill */}
           <div
             className="inline-flex items-center gap-2 rounded-full px-2.5 py-1.5"
@@ -60,17 +61,10 @@ export default function Hero() {
               lineHeight: "20px",
             }}
           >
-            <span>Announcing our next round of funding.</span>
-            <a
-              href="#"
-              className="hover:underline"
-              style={{ color: tokens.accent, fontWeight: 600 }}
-            >
-              Read more →
-            </a>
+            <span>HERO SECTION</span>
           </div>
 
-          {/* Headline */}
+          {/* Headline (two lines, second line accent via inline span color only; sizes unchanged) */}
           <h1
             id="hero-heading"
             className="mt-6 font-extrabold tracking-tight"
@@ -81,26 +75,25 @@ export default function Hero() {
               fontSize: "clamp(36px, 5.2vw, 56px)",
             }}
           >
-            Data to enrich your
+            UI Components
             <br />
-            online business
+            <span style={{ color: tokens.accent }}>Showcase</span>
           </h1>
 
-          {/* Supporting paragraph with constrained measure */}
+          {/* Supporting paragraph with constrained measure; content replaced exactly */}
           <p
-            className="mx-auto mt-4 max-w-3xl"
+            className="mx-auto mt-4 max-w-3xl md:mx-0"
             style={{
               color: tokens.textSecondary,
               fontSize: "18px",
               lineHeight: "28px",
             }}
           >
-            Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem
-            cupidatat commodo. Et sunt eu ut non esse fugiat veniam occaecat.
+            Explore modern, accessible React components styled with the Crater Professional theme. Navigate demos like Accordion, Bento, Carousel, Outlook, Toast, and more.
           </p>
 
-          {/* CTA row */}
-          <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-6">
+          {/* CTA row with updated labels */}
+          <div className="mt-8 inline-flex flex-wrap items-center justify-start gap-6">
             <a
               href={appUrl}
               role="button"
@@ -117,7 +110,7 @@ export default function Hero() {
                 (e.currentTarget.style.background = tokens.accent)
               }
             >
-              Get started
+              Explore Demos
             </a>
 
             <a
@@ -125,8 +118,34 @@ export default function Hero() {
               className="text-sm font-semibold hover:underline"
               style={{ color: tokens.textPrimary }}
             >
-              Learn more →
+              Try Outlook
             </a>
+          </div>
+
+          {/* Helper / supporting hint below CTAs */}
+          <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
+            <span
+              aria-hidden="true"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 18,
+                height: 18,
+                borderRadius: "9999px",
+                background: "rgba(156, 163, 175, 0.15)",
+                color: "#6B7280",
+                fontSize: 12,
+                lineHeight: "18px",
+                fontWeight: 600,
+              }}
+              title="Info"
+            >
+              i
+            </span>
+            <p className="text-gray-600">
+              Use the top navigation above to browse individual demo pages.
+            </p>
           </div>
         </div>
       </div>
