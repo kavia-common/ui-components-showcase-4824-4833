@@ -175,9 +175,9 @@ export default function Accordion() {
                     ? [
                         // spacing when open
                         "max-h-[600px] opacity-100 py-2.5 md:py-2",
-                        // Ocean Professional aligned light background on expanded content
-                        // use a very light, neutral-cool wash to keep contrast high
-                        "bg-blue-50/50",
+                        // Slightly darker light background for expanded content (one step deeper)
+                        // Use a cool-neutral wash to align with Ocean Professional and keep contrast accessible
+                        "bg-blue-50",
                         // subtle top divider to preserve separation from header area
                         "border-t border-sky-100",
                       ].join(" ")
