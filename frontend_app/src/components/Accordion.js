@@ -74,8 +74,10 @@ export default function Accordion() {
   const textStrong = "text-slate-900"; // --text-strong
   const textDefault = "text-slate-700"; // --text-default
   const iconMuted = "text-slate-400"; // --icon-muted
+
+  // Keep focus-visible accessibility, but make it minimal/soft using primary color with low opacity
   const focusRing =
-    "focus-visible:ring-cyan-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+    "focus-visible:ring-blue-500/30 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
   return (
     <section
@@ -96,9 +98,9 @@ export default function Accordion() {
               className={[
                 "bg-white rounded-[12px] border",
                 borderSubtle,
-                // container shadow transition for subtle elevation
-                "transition-shadow duration-200 ease-out",
-                "shadow-none hover:shadow-sm",
+                // Remove hover shadow; rely on a faint ring on hover via header
+                "transition-shadow duration-150 ease-out",
+                "shadow-none",
               ].join(" ")}
             >
               <button
@@ -114,17 +116,18 @@ export default function Accordion() {
                   textStrong,
                   "font-semibold text-[16px] leading-[1.35]",
                   "rounded-[12px]",
-                  // Soft background emphasis on hover/focus-visible
-                  "transition-colors duration-200 ease-out",
-                  "hover:bg-slate-50/60 focus-visible:bg-slate-50/60",
-                  // Accessible focus ring with offset
+                  // Softer transitions
+                  "transition-colors duration-150 ease-out",
+                  // Lower background tint for hover/focus-visible (barely-there)
+                  "hover:bg-slate-50/25 focus-visible:bg-slate-50/25",
+                  // Minimal focus ring
                   "focus:outline-none",
                   focusRing,
                 ].join(" ")}
               >
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron chip (keep behavior, add group-hover feedback) */}
+                {/* Chevron chip (behavior unchanged; feedback softened) */}
                 <span
                   aria-hidden="true"
                   className={[
@@ -132,15 +135,18 @@ export default function Accordion() {
                     "h-7 w-7 rounded-full bg-white",
                     "border",
                     isOpen ? borderStrong : borderSubtle,
-                    "transition-all duration-200 ease-out",
+                    // Faster, softer transitions
+                    "transition-all duration-150 ease-out",
                     isOpen ? "rotate-90" : "rotate-0",
-                    // darken icon slightly on hover/focus via group
+                    // icon color muted; darken slightly on group hover/focus
                     isOpen ? "text-slate-600" : iconMuted,
                     "group-hover:text-slate-600 group-focus-visible:text-slate-600",
-                    // subtle border emphasis on hover/focus
+                    // very subtle border emphasis on hover/focus
                     "group-hover:border-sky-300 group-focus-visible:border-sky-300",
-                    // mirror header's soft bg emphasis very faintly
-                    "group-hover:bg-blue-50/40 group-focus-visible:bg-blue-50/40",
+                    // dial down chip bg tint further (or effectively none)
+                    "group-hover:bg-slate-50/20 group-focus-visible:bg-slate-50/20",
+                    // add a faint outline/ring on group-hover via ring classes (using primary color very lightly)
+                    "group-hover:ring-1 group-hover:ring-blue-500/15 group-focus-visible:ring-1 group-focus-visible:ring-blue-500/20",
                   ].join(" ")}
                 >
                   <svg
@@ -149,7 +155,7 @@ export default function Accordion() {
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="transition-transform duration-200 ease-out"
+                    className="transition-transform duration-150 ease-out"
                   >
                     <path
                       d="M9 18l6-6-6-6"
@@ -162,7 +168,7 @@ export default function Accordion() {
                 </span>
               </button>
 
-              {/* Panel: animate max-height and opacity */}
+              {/* Panel: animate max-height and opacity (keep smoothness, slightly quicker ease-out) */}
               <div
                 id={panelId}
                 role="region"
