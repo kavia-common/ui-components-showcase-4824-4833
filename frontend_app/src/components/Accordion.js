@@ -75,7 +75,7 @@ export default function Accordion() {
   const textDefault = "text-slate-700"; // --text-default
   const iconMuted = "text-slate-400"; // --icon-muted
   const focusRing =
-    "focus-visible:ring-cyan-300 focus-visible:ring-2 focus-visible:ring-offset-2";
+    "focus-visible:ring-cyan-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
   return (
     <section
@@ -96,8 +96,9 @@ export default function Accordion() {
               className={[
                 "bg-white rounded-[12px] border",
                 borderSubtle,
-                "transition-shadow duration-150",
-                "shadow-none hover:shadow-[0_1px_2px_rgba(13,31,61,0.06)]",
+                // container shadow transition for subtle elevation
+                "transition-shadow duration-200 ease-out",
+                "shadow-none hover:shadow-sm",
               ].join(" ")}
             >
               <button
@@ -107,20 +108,23 @@ export default function Accordion() {
                 aria-expanded={isOpen}
                 onClick={() => toggle(idx)}
                 className={[
-                  // Tighter inner padding while preserving touch target on mobile
-                  "w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5",
+                  // Clickable header area
+                  "group w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5",
                   "sm:px-4 sm:py-2.5 md:px-4 md:py-2.5 lg:px-4 lg:py-2",
                   textStrong,
                   "font-semibold text-[16px] leading-[1.35]",
                   "rounded-[12px]",
-                  "transition-colors duration-150",
+                  // Soft background emphasis on hover/focus-visible
+                  "transition-colors duration-200 ease-out",
+                  "hover:bg-slate-50/60 focus-visible:bg-slate-50/60",
+                  // Accessible focus ring with offset
                   "focus:outline-none",
                   focusRing,
                 ].join(" ")}
               >
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron chip (keep size; slightly reduce spacing impact) */}
+                {/* Chevron chip (keep behavior, add group-hover feedback) */}
                 <span
                   aria-hidden="true"
                   className={[
@@ -128,10 +132,15 @@ export default function Accordion() {
                     "h-7 w-7 rounded-full bg-white",
                     "border",
                     isOpen ? borderStrong : borderSubtle,
-                    "transition-all duration-150",
+                    "transition-all duration-200 ease-out",
                     isOpen ? "rotate-90" : "rotate-0",
+                    // darken icon slightly on hover/focus via group
                     isOpen ? "text-slate-600" : iconMuted,
-                    "shadow-[0_0_0_0_rgba(0,0,0,0)]",
+                    "group-hover:text-slate-600 group-focus-visible:text-slate-600",
+                    // subtle border emphasis on hover/focus
+                    "group-hover:border-sky-300 group-focus-visible:border-sky-300",
+                    // mirror header's soft bg emphasis very faintly
+                    "group-hover:bg-blue-50/40 group-focus-visible:bg-blue-50/40",
                   ].join(" ")}
                 >
                   <svg
@@ -140,7 +149,7 @@ export default function Accordion() {
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="transition-transform duration-150"
+                    className="transition-transform duration-200 ease-out"
                   >
                     <path
                       d="M9 18l6-6-6-6"
