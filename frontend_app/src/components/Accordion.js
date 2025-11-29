@@ -39,9 +39,9 @@ export default function Accordion() {
       {
         q: "Does it support nested content?",
         a: (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <p>Yes. Panels can include lists, links, and images; maintain internal padding of 12–16px.</p>
-            <ul className="list-disc pl-5 text-[15px] text-gray-700">
+            <ul className="list-disc pl-5 text-[15px] text-gray-700 space-y-0.5">
               <li>Lists and inline links</li>
               <li>Images and media with responsive classes</li>
               <li>Code snippets or inline badges</li>
@@ -83,7 +83,8 @@ export default function Accordion() {
       aria-label="Frequently Asked Questions"
       className="mx-auto w-full max-w-3xl md:max-w-4xl lg:max-w-5xl"
     >
-      <div className="grid gap-4">
+      {/* Reduce vertical gaps between items (desktop tighter) */}
+      <div className="grid gap-3 md:gap-2.5 lg:gap-2">
         {items.map((it, idx) => {
           const isOpen = open === idx;
           const headerId = `${baseId}-acc-header-${idx}`;
@@ -106,7 +107,9 @@ export default function Accordion() {
                 aria-expanded={isOpen}
                 onClick={() => toggle(idx)}
                 className={[
-                  "w-full flex items-center justify-between gap-3 px-4 py-3 md:px-5 md:py-3",
+                  // Tighter inner padding while preserving touch target on mobile
+                  "w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5",
+                  "sm:px-4 sm:py-2.5 md:px-4 md:py-2.5 lg:px-4 lg:py-2",
                   textStrong,
                   "font-semibold text-[16px] leading-[1.35]",
                   "rounded-[12px]",
@@ -117,7 +120,7 @@ export default function Accordion() {
               >
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron chip */}
+                {/* Chevron chip (keep size; slightly reduce spacing impact) */}
                 <span
                   aria-hidden="true"
                   className={[
@@ -156,15 +159,17 @@ export default function Accordion() {
                 role="region"
                 aria-labelledby={headerId}
                 className={[
-                  "px-4 md:px-5",
+                  // Slightly reduced horizontal padding and vertical rhythm
+                  "px-3.5 sm:px-4 md:px-4",
                   "transition-all duration-300 ease-out",
-                  isOpen ? "max-h-[600px] opacity-100 py-3" : "max-h-0 opacity-0 py-0",
+                  isOpen ? "max-h-[600px] opacity-100 py-2.5 md:py-2" : "max-h-0 opacity-0 py-0",
                   "overflow-hidden",
                   textDefault,
-                  "text-[15px] leading-[1.55]",
+                  "text-[15px] leading-[1.5]",
                 ].join(" ")}
               >
-                <div className="pb-1">{it.a}</div>
+                {/* Reduce inner spacing within content */}
+                <div className="pb-0.5">{it.a}</div>
               </div>
             </div>
           );
