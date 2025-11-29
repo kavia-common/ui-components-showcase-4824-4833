@@ -3,38 +3,24 @@ import React from "react";
 /**
  * PUBLIC_INTERFACE
  * Hero
- * Centered-stack hero matching the provided screenshot’s structure and layout,
- * while preserving current color palette and gradient washes.
+ * Compact, responsive hero that maintains the Ocean Professional theme while
+ * reducing vertical height and ensuring proper text wrapping and alignment.
  *
- * Requirements:
- * - All hero content sits inside a centered container (box) with a constrained max-width.
- * - Focus on alignment, spacing, and decorative gradient washes.
- * - Do not change text content.
- * - Keep standalone Testimonial feature untouched (separate component).
+ * - Uses min-h-[55vh] on desktop and auto/min content on small screens.
+ * - Responsive typography with tighter leading and constrained max width.
+ * - Flex centering for vertical alignment; adequate inner padding.
  */
 export default function Hero() {
   const appUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
 
-  // Color tokens (aligned with Ocean Professional style, without altering global palette)
+  // Ocean Professional-aligned tokens (colors preserved)
   const tokens = {
     bgCanvas: "#FFFFFF",
     washViolet: "rgba(139, 92, 246, 0.08)",
     washPink: "rgba(236, 72, 153, 0.06)",
-
-    textPrimary: "#111827", // neutral-900
-    textSecondary: "#4B5563", // neutral-600
-
-    // Header gradient colors (reference from App header)
-    // Header gradient: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)
-    headerStart: "#af2497",
-    headerMid: "#902d9a",
-    headerEnd: "#1840a0",
-
-    // Keep existing accent tokens for other uses
-    accent: "#7C3AED", // violet-600
-    accentHover: "#6D28D9", // violet-700
+    textPrimary: "#111827",
+    textSecondary: "#4B5563",
     accentBorder: "rgba(124, 58, 237, 0.20)",
-
     btnShadow: "rgba(0,0,0,0.06)",
   };
 
@@ -42,22 +28,22 @@ export default function Hero() {
     <section
       role="region"
       aria-label="Hero"
-      className="relative overflow-hidden rounded-xl shadow-soft"
-      // Decorative background as soft radial washes over white canvas.
+      className="
+        relative overflow-hidden rounded-xl shadow-soft
+        flex items-center
+        min-h-[50vh] md:min-h-[55vh]
+      "
       style={{
+        // Decorative soft radial washes over white canvas.
         background: `
           radial-gradient(1200px 600px at 20% 30%, ${tokens.washViolet}, rgba(255,255,255,0) 60%),
           radial-gradient(1000px 500px at 80% 70%, ${tokens.washPink}, rgba(255,255,255,0) 60%),
           ${tokens.bgCanvas}
         `,
-        // Slightly reduce outer vertical spacing to lower the section height
-        paddingTop: "0.6rem",
-        paddingBottom: "0.6rem",
       }}
     >
-      {/* Centered container (box) with constrained max-width and responsive paddings */}
-      <div className="mx-auto max-w-[20rem] px-2 md:px-2.5 lg:px-3.5 py-3.5 md:py-5 lg:py-6">
-        {/* Left-aligned layout per request while maintaining existing structure */}
+      {/* Content container with compact padding to reduce hero height */}
+      <div className="mx-auto w-full max-w-5xl px-4 md:px-6 lg:px-8 py-12 md:py-16">
         <div className="text-left">
           {/* Announcement pill */}
           <div
@@ -66,7 +52,7 @@ export default function Hero() {
               background: "rgba(124, 58, 237, 0.08)",
               border: `1px solid ${tokens.accentBorder}`,
               color: tokens.textPrimary,
-              fontSize: "14px",
+              fontSize: 14,
               fontWeight: 500,
               lineHeight: "20px",
             }}
@@ -74,15 +60,15 @@ export default function Hero() {
             <span>HERO SECTION</span>
           </div>
 
-          {/* Headline (two lines, second line accent via inline span color only; sizes unchanged) */}
+          {/* Headline with responsive sizes and tight leading to prevent overflow */}
           <h1
             id="hero-heading"
-            className="mt-6 font-extrabold tracking-tight"
+            className="mt-5 font-extrabold tracking-tight
+                       text-3xl sm:text-4xl md:text-5xl
+                       leading-snug md:leading-tight"
             style={{
               color: tokens.textPrimary,
               letterSpacing: "-0.02em",
-              lineHeight: 1.08,
-              fontSize: "clamp(36px, 5.2vw, 56px)",
             }}
           >
             UI Components
@@ -100,55 +86,34 @@ export default function Hero() {
             </span>
           </h1>
 
-          {/* Supporting paragraph with constrained measure; content replaced exactly */}
+          {/* Supporting text with constrained measure and improved wrapping */}
           <p
-            className="mx-auto mt-4 max-w-3xl md:mx-0"
-            style={{
-              color: tokens.textSecondary,
-              fontSize: "18px",
-              lineHeight: "28px",
-            }}
+            className="mt-3 max-w-2xl text-base sm:text-lg leading-relaxed text-gray-600"
+            style={{ color: tokens.textSecondary }}
           >
             Explore modern, accessible React components styled with the Crater Professional theme. Navigate demos like Accordion, Bento, Carousel, Outlook, Toast, and more.
           </p>
 
-          {/* CTA row with updated labels */}
-          <div className="mt-8 inline-flex flex-wrap items-center justify-start gap-6">
+          {/* CTA row: compact spacing and wrap support */}
+          <div className="mt-6 inline-flex flex-wrap items-center justify-start gap-4">
             <a
               href={appUrl}
               role="button"
-              className="inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
+              className="inline-flex h-11 items-center justify-center rounded-full px-4
+                         text-sm font-semibold text-white shadow-sm
+                         focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600/50"
               style={{
-                // Apply the specified gradient to the button background
                 background:
                   "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
                 boxShadow: `0 1px 2px ${tokens.btnShadow}`,
                 transition: "filter 150ms ease",
-                color: "#ffffff",
               }}
-              onMouseEnter={(e) => {
-                // Subtle brightness increase on hover
-                e.currentTarget.style.filter = "brightness(1.06)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.filter = "brightness(1)";
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.filter = "brightness(1.06)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.filter = "brightness(1)";
-              }}
+              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.06)")}
+              onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
+              onFocus={(e) => (e.currentTarget.style.filter = "brightness(1.06)")}
+              onBlur={(e) => (e.currentTarget.style.filter = "brightness(1)")}
             >
-              <span
-                // Remove gradient text styling to avoid conflict; keep readable white text
-                className=""
-                style={{
-                  color: "#ffffff",
-                }}
-              >
-                Explore Demos
-              </span>
+              <span>Explore Demos</span>
             </a>
 
             {/* Secondary CTA with gradient border */}
@@ -163,17 +128,13 @@ export default function Hero() {
             >
               <a
                 href="#accordion"
-                className="text-sm font-semibold rounded-full px-4 h-11 inline-flex items-center justify-center"
-                style={{
-                  color: tokens.textPrimary,
-                  backgroundColor: "#ffffff",
-                }}
+                className="text-sm font-semibold rounded-full px-4 h-11 inline-flex items-center justify-center bg-white"
+                style={{ color: tokens.textPrimary }}
                 onMouseEnter={(e) => {
                   const parent = e.currentTarget.parentElement;
                   if (parent) {
                     parent.style.filter = "brightness(1.05)";
-                    parent.style.boxShadow =
-                      "0 6px 16px rgba(24, 64, 160, 0.18)";
+                    parent.style.boxShadow = "0 6px 16px rgba(24, 64, 160, 0.18)";
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -187,8 +148,7 @@ export default function Hero() {
                   const parent = e.currentTarget.parentElement;
                   if (parent) {
                     parent.style.filter = "brightness(1.05)";
-                    parent.style.boxShadow =
-                      "0 6px 16px rgba(24, 64, 160, 0.18)";
+                    parent.style.boxShadow = "0 6px 16px rgba(24, 64, 160, 0.18)";
                   }
                 }}
                 onBlur={(e) => {
@@ -204,8 +164,8 @@ export default function Hero() {
             </span>
           </div>
 
-          {/* Helper / supporting hint below CTAs */}
-          <div className="mt-3 flex items-start gap-2 text-sm text-gray-500">
+          {/* Helper text */}
+          <div className="mt-2.5 flex items-start gap-2 text-sm text-gray-500">
             <span
               aria-hidden="true"
               style={{
