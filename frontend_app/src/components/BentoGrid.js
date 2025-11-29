@@ -9,32 +9,110 @@ import React from "react";
  * - Subtle scale-only hover/focus-visible feedback (no color changes)
  * - Cohesive typography for titles/subtitles/content
  *
- * The dense, asymmetric layout and gap structure are preserved.
+ * Overlap fix:
+ * - Parent uses CSS Grid with consistent auto-rows and gaps per breakpoint.
+ * - grid-auto-flow: dense at md+ to backfill holes.
+ * - Per-card spans are tuned so they pack without collision.
+ * - Hover transforms are modest and constrained with overflow-hidden and origin-center to prevent layout shifts.
  */
 export default function BentoGrid() {
   /**
    * Layout
-   * - xs/sm: 1–2 columns stack.
+   * - xs: 1 column stack.
+   * - sm: 2 columns.
    * - md: 6 columns mosaic.
    * - lg: 8 columns mosaic.
-   * - Auto rows fixed at md+/lg to ensure consistent row-span sizing.
+   * - Auto rows fixed at md+/lg for predictable row-span sizing.
+   *   Use a slightly taller base row (104px) to accommodate header + body content.
    */
   const cards = [
-    { title: "Fast", desc: "Optimized build with minimal dependencies.", span: { sm: "sm:col-span-2 sm:row-span-2", md: "md:col-span-4 md:row-span-2", lg: "lg:col-span-5 lg:row-span-2" } },
-    { title: "Themed", desc: "Ocean Professional palette out-of-the-box.", span: { sm: "sm:col-span-1 sm:row-span-1", md: "md:col-span-2 md:row-span-1", lg: "lg:col-span-3 lg:row-span-1" } },
-    { title: "Responsive", desc: "Mobile-first, adapts to all screen sizes.", span: { sm: "sm:col-span-1 sm:row-span-2", md: "md:col-span-2 md:row-span-2", lg: "lg:col-span-3 lg:row-span-2" } },
-    { title: "Accessible", desc: "Usability and semantics considered.", span: { sm: "sm:col-span-1 sm:row-span-1", md: "md:col-span-2 md:row-span-1", lg: "lg:col-span-2 lg:row-span-1" } },
-    { title: "Composable", desc: "Mix and match primitives for velocity.", span: { sm: "sm:col-span-1 sm:row-span-1", md: "md:col-span-2 md:row-span-1", lg: "lg:col-span-2 lg:row-span-1" } },
-    { title: "Performant", desc: "GPU-accelerated transitions, no jank.", span: { sm: "sm:col-span-2 sm:row-span-2", md: "md:col-span-3 md:row-span-2", lg: "lg:col-span-4 lg:row-span-2" } },
-    { title: "Reliable", desc: "Mature build tooling and proven patterns.", span: { sm: "sm:col-span-1 sm:row-span-1", md: "md:col-span-1 md:row-span-1", lg: "lg:col-span-2 lg:row-span-1" } },
-    { title: "Extensible", desc: "Scale components as your app grows.", span: { sm: "sm:col-span-1 sm:row-span-2", md: "md:col-span-3 md:row-span-2", lg: "lg:col-span-3 lg:row-span-2" } },
+    // Wide hero card; occupies the top-left area
+    {
+      title: "Fast",
+      desc: "Optimized build with minimal dependencies.",
+      span: {
+        sm: "sm:col-span-2 sm:row-span-2",
+        md: "md:col-span-4 md:row-span-2",
+        lg: "lg:col-span-5 lg:row-span-2",
+      },
+    },
+    // Small single block
+    {
+      title: "Themed",
+      desc: "Ocean Professional palette out-of-the-box.",
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-3 lg:row-span-1",
+      },
+    },
+    // Tall narrow block
+    {
+      title: "Responsive",
+      desc: "Mobile-first, adapts to all screen sizes.",
+      span: {
+        sm: "sm:col-span-1 sm:row-span-2",
+        md: "md:col-span-2 md:row-span-2",
+        lg: "lg:col-span-3 lg:row-span-2",
+      },
+    },
+    // Small single block
+    {
+      title: "Accessible",
+      desc: "Usability and semantics considered.",
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-2 lg:row-span-1",
+      },
+    },
+    // Small single block
+    {
+      title: "Composable",
+      desc: "Mix and match primitives for velocity.",
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-2 lg:row-span-1",
+      },
+    },
+    // Medium wide block
+    {
+      title: "Performant",
+      desc: "GPU-accelerated transitions, no jank.",
+      span: {
+        sm: "sm:col-span-2 sm:row-span-2",
+        md: "md:col-span-3 md:row-span-2",
+        lg: "lg:col-span-4 lg:row-span-2",
+      },
+    },
+    // Small block
+    {
+      title: "Reliable",
+      desc: "Mature build tooling and proven patterns.",
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-2 lg:row-span-1",
+      },
+    },
+    // Medium-tall block; tuned spans to avoid collision with previous items at lg
+    {
+      title: "Extensible",
+      desc: "Scale components as your app grows.",
+      span: {
+        sm: "sm:col-span-1 sm:row-span-2",
+        md: "md:col-span-3 md:row-span-2",
+        lg: "lg:col-span-3 lg:row-span-2",
+      },
+    },
   ];
 
   // PUBLIC_INTERFACE
   // Helper to serialize per-breakpoint span hints into Tailwind classes.
   function spanToClass(span) {
     /**
-     * Convert span object (sm/md/lg keys with class strings) into a single
+     * Convert span object (sm/md/ld keys with class strings) into a single
      * className string, preserving prefixes for breakpoints.
      */
     if (!span) return "";
@@ -57,17 +135,21 @@ export default function BentoGrid() {
 
   return (
     <section aria-label="Bento grid of features" className="w-full">
-      {/* Grid shell: preserve dense, asymmetric layout and gaps */}
+      {/* Grid shell with consistent rows and dense packing */}
       <div
         className={[
-          "grid gap-0", // ensure gap-free between cards; internal paddings provide spacing
+          "grid",
+          // Keep a tiny visual gap; avoid zero to reduce accidental overlap illusions
+          "gap-2 sm:gap-2 md:gap-3 lg:gap-3",
+          // Responsive columns
           "grid-cols-1",
           "sm:grid-cols-2",
           "md:grid-cols-6",
           "lg:grid-cols-8",
-          // consistent auto rows for predictable row-span sizing
-          "auto-rows-[minmax(112px,auto)] sm:auto-rows-[minmax(112px,auto)] md:auto-rows-[96px] lg:auto-rows-[96px]",
-          // dense packing so items fill available gaps
+          // Consistent auto-rows for predictable row-span sizing
+          // Slightly taller base at md/lg to fit header + body content comfortably
+          "auto-rows-[minmax(120px,auto)] sm:auto-rows-[minmax(120px,auto)] md:auto-rows-[104px] lg:auto-rows-[104px]",
+          // Dense packing so items fill available gaps
           "md:[grid-auto-flow:dense] lg:[grid-auto-flow:dense]",
         ].join(" ")}
       >
@@ -79,15 +161,16 @@ export default function BentoGrid() {
               spanToClass(c.span),
               // Surface with rounded corners and isolation
               "bg-[var(--color-surface)] overflow-hidden rounded-xl",
-              // Uniform border for all cards to match polished look
+              // Unified border for all cards
               "border border-white/10",
               // Subtle elevation
               "shadow-soft",
-              // Scale-only hover/focus-visible behavior (no color change)
+              // Constrained hover to avoid layout shifts
               "transform-gpu will-change-transform origin-center",
               "transition-transform duration-200 ease-out",
               "hover:scale-[1.01] focus-within:scale-[1.01]",
-              "relative",
+              // Create a new stacking context and clip hover scale
+              "relative isolate",
             ].join(" ")}
             aria-label={`${c.title} card`}
           >
@@ -111,7 +194,7 @@ export default function BentoGrid() {
                 {/* Demo block scales with row-span via fixed auto-rows */}
                 <div
                   className="flex-1 rounded-lg bg-blue-50"
-                  style={{ height: "4.0rem" }} // subtle, uniform demo area height baseline
+                  style={{ height: "3.75rem" }} // modest baseline height; larger spans visually grow via auto-rows
                   aria-hidden="true"
                 />
                 <a
