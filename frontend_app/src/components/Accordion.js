@@ -97,8 +97,9 @@ export default function Accordion() {
   const gradientStripeBase = {
     background: gradientCSS,
     willChange: "height, opacity, clip-path, transform",
+    // Speed up only the gradient stripe animation while keeping smooth ease-out timing
     transition:
-      "height 240ms ease-out, opacity 220ms ease-out, clip-path 260ms ease-out",
+      "height 180ms ease-out, opacity 170ms ease-out, clip-path 190ms ease-out",
   };
 
   // PUBLIC_INTERFACE
