@@ -130,13 +130,14 @@ export default function BentoGrid() {
       */}
       <div
         className={[
-          "grid gap-4",
+          // Reduce base gap for tighter spacing; keep slightly more room on md+ for readability
+          "grid gap-2 sm:gap-2 md:gap-2.5 lg:gap-3",
           "grid-cols-1",
           "sm:grid-cols-2",
           "md:grid-cols-6",
           "lg:grid-cols-8",
           // consistent auto rows for predictable row-span sizing
-          "auto-rows-[minmax(116px,auto)] sm:auto-rows-[minmax(116px,auto)] md:auto-rows-[96px] lg:auto-rows-[96px]",
+          "auto-rows-[minmax(112px,auto)] sm:auto-rows-[minmax(112px,auto)] md:auto-rows-[96px] lg:auto-rows-[96px]",
           // dense packing so items fill available gaps
           "md:[grid-auto-flow:dense] lg:[grid-auto-flow:dense]",
         ].join(" ")}
@@ -158,27 +159,27 @@ export default function BentoGrid() {
           >
             {/* Gradient header preserved; no hover color changes */}
             <header
-              className="px-4 py-2.5 border-b border-white/15"
+              className="px-3.5 py-2 border-b border-white/15"
               style={{
                 background: headerGradient,
                 color: "#ffffff",
               }}
             >
-              <h3 className="text-sm sm:text-base font-semibold leading-6 text-white">
+              <h3 className="text-sm sm:text-[15px] font-semibold leading-6 text-white">
                 {c.title}
               </h3>
             </header>
 
             {/* Content body; layout remains stable on hover due to transform-only scale */}
-            <div className="p-4">
+            <div className="p-3.5 sm:p-3.5 md:p-3.5">
               <p className="text-sm text-gray-700">{c.desc}</p>
 
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-2.5 flex items-center justify-between">
                 {/* Demo block height scales perceptually with row-span because auto-rows are fixed */}
                 <div className="h-20 md:h-16 flex-1 rounded-lg bg-blue-50" />
                 <a
                   href="#"
-                  className="ml-4 rounded-full px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:opacity-95 focus-ring"
+                  className="ml-3 rounded-full px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:opacity-95 focus-ring"
                 >
                   Details
                 </a>
