@@ -178,8 +178,8 @@ export default function Accordion() {
                         // Slightly darker light background for expanded content (one step deeper)
                         // Use a cool-neutral wash to align with Ocean Professional and keep contrast accessible
                         "bg-blue-50",
-                        // subtle top divider to preserve separation from header area
-                        "border-t border-sky-100",
+                        // subtle top divider to preserve separation from header area (only when open)
+                        "border-t border-slate-200",
                       ].join(" ")
                     : "max-h-0 opacity-0 py-0",
                   "overflow-hidden",
