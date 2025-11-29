@@ -13,6 +13,11 @@ import React, { useId, useMemo, useState, useCallback } from "react";
  * - Borders/dividers: 1px item border; header hover shifts only border color and soft background
  * - Interaction: item-level hover remains scale-only; no color change beyond allowed subtle header bg
  * - Accessibility: visible focus ring on header, retains aria attributes
+ *
+ * Enhancement:
+ * - Add subtle gradient left border (2.5px) on header using blue (#2563EB) → amber (#F59E0B).
+ * - The gradient stripe extends through the entire item only when open for visual continuity.
+ * - Preserve rounded corners and avoid overflow/clipping.
  */
 export default function Accordion() {
   // Expanded FAQ list based on design notes (assets/accordion_design_notes.md)
@@ -82,6 +87,12 @@ export default function Accordion() {
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400/60";
 
+  // Gradient stripe style (professional, subtle; low saturation by opacity)
+  const gradientStyle = {
+    background:
+      "linear-gradient(180deg, rgba(37,99,235,0.9) 0%, rgba(245,158,11,0.9) 100%)",
+  };
+
   return (
     <section
       id="accordion"
@@ -104,8 +115,20 @@ export default function Accordion() {
                 "transform transition-transform duration-200 ease-out",
                 "hover:scale-[1.015] focus-within:scale-[1.015]",
                 "shadow-none",
+                "relative overflow-hidden", // ensure gradient stripe respects rounding; no clipping of content
               ].join(" ")}
             >
+              {/* Gradient stripe — header-only by default; extends full item when open */}
+              <div
+                aria-hidden="true"
+                className={[
+                  "absolute left-0 top-0 w-[3px] rounded-l-[12px]",
+                  isOpen ? "h-full" : "h-[48px] sm:h-[48px] md:h-[48px]",
+                  // ensure the header-only stripe aligns with header height (≈48px)
+                ].join(" ")}
+                style={gradientStyle}
+              />
+
               <button
                 id={headerId}
                 type="button"
@@ -116,7 +139,8 @@ export default function Accordion() {
                 className={[
                   "w-full flex items-center justify-between gap-3",
                   // padding 12px y / 16px x
-                  "px-4 py-3",
+                  "pl-4 pr-4 py-3",
+                  // add small left padding to create separation from gradient stripe
                   // Typography 16px/24px semibold; keep left-aligned
                   textStrong,
                   "font-semibold text-[16px] leading-6",
@@ -135,19 +159,13 @@ export default function Accordion() {
                   aria-hidden="true"
                   className={[
                     "inline-flex items-center justify-center",
-                    // minimum 28px area; use 7 as Tailwind scale is 1.75rem? Use explicit values for precision:
                     "h-[28px] w-[28px] rounded-full",
-                    // default transparent bg; bordered circle matches design
                     "bg-transparent border",
                     isOpen ? "bg-indigo-50" : "",
                     isOpen ? "border-indigo-600" : borderDefault,
-                    // color transitions for icon
                     "transition-colors duration-150 ease-out",
-                    // If header hovered, slightly tint and strengthen border without global color shifts
                     "group/item:hover:bg-indigo-50/60 group/item:hover:border-slate-300",
-                    // Improve focus visibility when header focused
                     "shadow-none",
-                    // Icon color rules; keep active indigo when open
                     isOpen ? iconActive : iconDefault,
                   ].join(" ")}
                 >
@@ -184,7 +202,7 @@ export default function Accordion() {
                   isOpen
                     ? [
                         "max-h-[600px] opacity-100 py-3",
-                        // No aggressive background shifts; keep a very light wash optional if desired
+                        // Keep subtle content background; the gradient stripe is separate on the left
                         "bg-blue-50",
                         // subtle top divider
                         "border-t border-slate-200",
