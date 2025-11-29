@@ -7,70 +7,114 @@ import React from "react";
  *
  * Implementation details:
  * - Uses grid-auto-flow: dense and consistent auto-rows so varied spans pack tightly.
- * - Tailored span patterns per breakpoint (sm/md/lg) to keep an intentionally
- *   non-uniform yet well-balanced layout.
+ * - Tailored span patterns per breakpoint (sm/md/lg) to match the provided screenshot.
  * - Preserves gradient headers and subtle scale-only hover/focus-visible effect.
  */
 export default function BentoGrid() {
   /**
-   * Layout approach
-   * - sm: 1 column, each item full width, natural stack (no holes).
-   * - md: 6 columns, auto-rows fixed (92–96px); spans chosen so rows fill to 6 cols.
-   * - lg: 8 columns, same auto-rows height; spans adjusted to maintain asymmetry and density.
+   * Updated layout approach to match the screenshot pattern
+   * - xs/sm: 1–2 columns natural stack, full-width items.
+   * - md: 6 columns with explicit card spans for a non-uniform mosaic.
+   * - lg: 8 columns with adjusted spans preserving the same visual rhythm.
    *
-   * The spans below are tuned to avoid common holes on 6/8 column tracks.
+   * We keep grid-auto-rows consistent (md+/lg: 96px) and enable dense packing
+   * to eliminate gaps even with non-uniform spans.
    */
   const cards = [
+    // Top-left hero tile
     {
       title: "Fast",
       desc: "Optimized build with minimal dependencies.",
-      span: { md: "col-span-3 row-span-2", lg: "col-span-4 row-span-2" },
+      span: {
+        sm: "sm:col-span-2 sm:row-span-2",
+        md: "md:col-span-4 md:row-span-2",
+        lg: "lg:col-span-5 lg:row-span-2",
+      },
     },
+    // Top-right skinny
     {
       title: "Themed",
       desc: "Ocean Professional palette out-of-the-box.",
-      span: { md: "col-span-3 row-span-1", lg: "col-span-2 row-span-1" },
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-3 lg:row-span-1",
+      },
     },
+    // Right column tall block
     {
       title: "Responsive",
       desc: "Mobile-first, adapts to all screen sizes.",
-      span: { md: "col-span-2 row-span-2", lg: "col-span-2 row-span-2" },
+      span: {
+        sm: "sm:col-span-1 sm:row-span-2",
+        md: "md:col-span-2 md:row-span-2",
+        lg: "lg:col-span-3 lg:row-span-2",
+      },
     },
+    // Small under hero
     {
       title: "Accessible",
       desc: "Usability and semantics considered.",
-      span: { md: "col-span-2 row-span-1", lg: "col-span-2 row-span-1" },
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-2 lg:row-span-1",
+      },
     },
+    // Small filler
     {
       title: "Composable",
       desc: "Mix and match primitives for velocity.",
-      span: { md: "col-span-2 row-span-1", lg: "col-span-2 row-span-1" },
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-2 md:row-span-1",
+        lg: "lg:col-span-2 lg:row-span-1",
+      },
     },
+    // Mid-row wide feature
     {
       title: "Performant",
       desc: "GPU-accelerated transitions, no jank.",
-      span: { md: "col-span-3 row-span-2", lg: "col-span-4 row-span-2" },
+      span: {
+        sm: "sm:col-span-2 sm:row-span-2",
+        md: "md:col-span-3 md:row-span-2",
+        lg: "lg:col-span-4 lg:row-span-2",
+      },
     },
+    // Small tile
     {
       title: "Reliable",
       desc: "Mature build tooling and proven patterns.",
-      span: { md: "col-span-2 row-span-1", lg: "col-span-2 row-span-1" },
+      span: {
+        sm: "sm:col-span-1 sm:row-span-1",
+        md: "md:col-span-1 md:row-span-1",
+        lg: "lg:col-span-2 lg:row-span-1",
+      },
     },
+    // Bottom-right tall
     {
       title: "Extensible",
       desc: "Scale components as your app grows.",
-      span: { md: "col-span-2 row-span-2", lg: "col-span-2 row-span-2" },
+      span: {
+        sm: "sm:col-span-1 sm:row-span-2",
+        md: "md:col-span-3 md:row-span-2",
+        lg: "lg:col-span-3 lg:row-span-2",
+      },
     },
   ];
 
   // PUBLIC_INTERFACE
   // Helper to serialize per-breakpoint span hints into Tailwind classes.
   function spanToClass(span) {
-    /** Convert span object to md:/lg: prefixed utility classes. */
+    /**
+     * Convert span object (sm/md/lg keys with class strings) into a single
+     * className string, preserving prefixes for breakpoints.
+     */
     if (!span) return "";
-    const md = span.md ? `md:${span.md}` : "";
-    const lg = span.lg ? `lg:${span.lg}` : "";
-    return [md, lg].filter(Boolean).join(" ");
+    const sm = span.sm ? `${span.sm}` : "";
+    const md = span.md ? `${span.md}` : "";
+    const lg = span.lg ? `${span.lg}` : "";
+    return [sm, md, lg].filter(Boolean).join(" ");
   }
 
   const headerGradient =
@@ -78,21 +122,22 @@ export default function BentoGrid() {
 
   return (
     <section aria-label="Bento grid of features" className="w-full">
-      {/* Grid shell:
-         - Small: single column; slightly taller auto-rows to provide breathing room.
+      {/* Grid shell
+         - Base: 1 column with comfortable row height for readability.
+         - sm: 2 columns to begin asymmetry early.
          - md: 6 columns; fixed auto-rows and dense packing.
-         - lg: 8 columns; same auto-rows height for stable row-span math.
+         - lg: 8 columns; same auto-rows height; pattern widens.
       */}
       <div
         className={[
           "grid gap-4",
           "grid-cols-1",
-          "sm:grid-cols-2", // allow early 2-col packing to avoid tall stacks on small-ish screens
+          "sm:grid-cols-2",
           "md:grid-cols-6",
           "lg:grid-cols-8",
-          // consistent auto row height; slightly taller on base for better single-column rhythm
+          // consistent auto rows for predictable row-span sizing
           "auto-rows-[minmax(116px,auto)] sm:auto-rows-[minmax(116px,auto)] md:auto-rows-[96px] lg:auto-rows-[96px]",
-          // dense packing at md+ so later items can backfill holes
+          // dense packing so items fill available gaps
           "md:[grid-auto-flow:dense] lg:[grid-auto-flow:dense]",
         ].join(" ")}
       >
@@ -100,10 +145,8 @@ export default function BentoGrid() {
           <article
             key={`${c.title}-${i}`}
             className={[
-              // Base spans
-              "col-span-1",
-              // Apply responsive span hints
-              spanToClass(c.span),
+              "col-span-1", // base
+              spanToClass(c.span), // responsive spans
               // Visual surface + transform isolation; scale-only hover/focus
               "surface overflow-hidden rounded-xl",
               "transform-gpu will-change-transform origin-center",
