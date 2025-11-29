@@ -3,13 +3,13 @@ import React from "react";
 /**
  * PUBLIC_INTERFACE
  * BentoGrid
- * Asymmetric, dense CSS Grid layout with comfortable gaps restored.
+ * Asymmetric, dense CSS Grid layout whose visual style is now uniform per card:
+ * - Identical header gradient, fixed header height/padding
+ * - Consistent rounded corners and surface padding
+ * - Subtle scale-only hover/focus-visible feedback (no color changes)
+ * - Cohesive typography for titles/subtitles/content
  *
- * Implementation details:
- * - Uses grid-auto-flow: dense and consistent auto-rows so varied spans pack tightly.
- * - Tailored span patterns per breakpoint (sm/md/lg) preserved to keep asymmetric rhythm.
- * - Restores prior grid gap utilities and per-card padding/margins that were recently tightened.
- * - Keeps gradient headers and subtle scale-only hover/focus-visible effect without color changes.
+ * The dense, asymmetric layout and gap structure are preserved.
  */
 export default function BentoGrid() {
   /**
@@ -44,16 +44,23 @@ export default function BentoGrid() {
     return [sm, md, lg].filter(Boolean).join(" ");
   }
 
+  // Shared visual tokens for uniform styling
   const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
+  // Fixed header height and padding for consistency
+  const headerStyle = {
+    background: headerGradient,
+    color: "#ffffff",
+    minHeight: 48, // consistent header height target
+  };
+
   return (
     <section aria-label="Bento grid of features" className="w-full">
-      {/* Grid shell with restored gaps */}
+      {/* Grid shell: preserve dense, asymmetric layout and gaps */}
       <div
         className={[
-          // Restore prior roomy gaps while keeping dense packing via spans
-          "grid gap-4 sm:gap-4 md:gap-5 lg:gap-6",
+          "grid gap-0", // ensure gap-free between cards; internal paddings provide spacing
           "grid-cols-1",
           "sm:grid-cols-2",
           "md:grid-cols-6",
@@ -70,8 +77,13 @@ export default function BentoGrid() {
             className={[
               "col-span-1",
               spanToClass(c.span),
-              // Surface with rounded corners and transform isolation
-              "surface overflow-hidden rounded-xl",
+              // Surface with rounded corners and isolation
+              "bg-[var(--color-surface)] overflow-hidden rounded-xl",
+              // Uniform border for all cards to match polished look
+              "border border-white/10",
+              // Subtle elevation
+              "shadow-soft",
+              // Scale-only hover/focus-visible behavior (no color change)
               "transform-gpu will-change-transform origin-center",
               "transition-transform duration-200 ease-out",
               "hover:scale-[1.01] focus-within:scale-[1.01]",
@@ -79,29 +91,32 @@ export default function BentoGrid() {
             ].join(" ")}
             aria-label={`${c.title} card`}
           >
-            {/* Gradient header preserved; no hover color changes */}
+            {/* Uniform gradient header with fixed height/padding */}
             <header
-              className="px-4 py-2.5 border-b border-white/15"
-              style={{
-                background: headerGradient,
-                color: "#ffffff",
-              }}
+              className="flex items-center px-4 py-3 border-b border-white/15"
+              style={headerStyle}
             >
-              <h3 className="text-sm sm:text-[15px] font-semibold leading-6 text-white">
+              <h3 className="text-[15px] sm:text-sm font-semibold leading-6 text-white">
                 {c.title}
               </h3>
             </header>
 
-            {/* Content body with restored padding for readability */}
-            <div className="p-4 sm:p-4 md:p-5">
-              <p className="text-sm text-gray-700">{c.desc}</p>
+            {/* Consistent body padding and typography */}
+            <div className="p-4 md:p-5">
+              <p className="text-[14px] sm:text-sm leading-relaxed text-gray-700">
+                {c.desc}
+              </p>
 
               <div className="mt-3.5 flex items-center justify-between">
-                {/* Demo block height scales with row-span due to fixed auto-rows */}
-                <div className="h-20 md:h-16 flex-1 rounded-lg bg-blue-50" />
+                {/* Demo block scales with row-span via fixed auto-rows */}
+                <div
+                  className="flex-1 rounded-lg bg-blue-50"
+                  style={{ height: "4.0rem" }} // subtle, uniform demo area height baseline
+                  aria-hidden="true"
+                />
                 <a
                   href="#"
-                  className="ml-4 rounded-full px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:opacity-95 focus-ring"
+                  className="ml-4 rounded-full px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 focus-ring"
                 >
                   Details
                 </a>
