@@ -87,10 +87,12 @@ export default function Accordion() {
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400/60";
 
-  // Gradient stripe style (professional, subtle; low saturation by opacity)
+  // Gradient stripe style updated per request to match header/footer gradient
+  // This stripe applies to the left border of the question/header, and when open it
+  // extends through the entire item for continuity.
   const gradientStyle = {
     background:
-      "linear-gradient(180deg, rgba(37,99,235,0.9) 0%, rgba(245,158,11,0.9) 100%)",
+      "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
   };
 
   return (
