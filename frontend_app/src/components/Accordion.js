@@ -15,9 +15,15 @@ import React, { useId, useMemo, useState, useCallback } from "react";
  * - Accessibility: visible focus ring on header, retains aria attributes
  *
  * Enhancement:
- * - Add subtle gradient left border (2.5px) on header using blue (#2563EB) → amber (#F59E0B).
+ * - Add subtle gradient left border (2.5px) on header using app header/footer gradient.
  * - The gradient stripe extends through the entire item only when open for visual continuity.
  * - Preserve rounded corners and avoid overflow/clipping.
+ *
+ * Additional update:
+ * - Chevron/arrow icon now visually matches the header gradient by:
+ *   1) Using an SVG linearGradient for the chevron stroke.
+ *   2) Wrapping the icon chip in a 1px gradient ring via background-clip without altering interior fill.
+ *   Both preserve size (28px chip, 16px glyph), rotation, scale-only hover, focus-visible, and responsiveness.
  */
 export default function Accordion() {
   // Expanded FAQ list based on design notes (assets/accordion_design_notes.md)
@@ -95,6 +101,16 @@ export default function Accordion() {
       "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
   };
 
+  // PUBLIC_INTERFACE
+  // Small helper returning gradient ring style for the icon wrapper.
+  // We use 1px padding plus a white inner to simulate a gradient border.
+  const gradientRingStyle = {
+    background:
+      "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+    padding: "1px",
+    borderRadius: "9999px",
+  };
+
   return (
     <section
       id="accordion"
@@ -107,6 +123,7 @@ export default function Accordion() {
           const isOpen = open === idx;
           const headerId = `${baseId}-acc-header-${idx}`;
           const panelId = `${baseId}-acc-panel-${idx}`;
+          const gradId = `${baseId}-chev-grad-${idx}`;
 
           return (
             <div
@@ -126,7 +143,6 @@ export default function Accordion() {
                 className={[
                   "absolute left-0 top-0 w-[3px] rounded-l-[12px]",
                   isOpen ? "h-full" : "h-[48px] sm:h-[48px] md:h-[48px]",
-                  // ensure the header-only stripe aligns with header height (≈48px)
                 ].join(" ")}
                 style={gradientStyle}
               />
@@ -142,7 +158,6 @@ export default function Accordion() {
                   "w-full flex items-center justify-between gap-3",
                   // padding 12px y / 16px x
                   "pl-4 pr-4 py-3",
-                  // add small left padding to create separation from gradient stripe
                   // Typography 16px/24px semibold; keep left-aligned
                   textStrong,
                   "font-semibold text-[16px] leading-6",
@@ -156,40 +171,68 @@ export default function Accordion() {
                 {/* Question text stays left, no color change on hover */}
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron container: 28px circle, 16px icon; right-aligned */}
+                {/* Chevron container: gradient ring + neutral interior, 28px chip, 16px icon */}
                 <span
                   aria-hidden="true"
+                  // Outer ring: gradient border (1px) using background + padding
+                  style={gradientRingStyle}
                   className={[
                     "inline-flex items-center justify-center",
                     "h-[28px] w-[28px] rounded-full",
-                    "bg-transparent border",
-                    isOpen ? "bg-indigo-50" : "",
-                    isOpen ? "border-indigo-600" : borderDefault,
-                    "transition-colors duration-150 ease-out",
-                    "group/item:hover:bg-indigo-50/60 group/item:hover:border-slate-300",
-                    "shadow-none",
-                    isOpen ? iconActive : iconDefault,
+                    "transition-transform duration-200 ease-out",
+                    // scale-only hover feedback (kept subtle)
+                    "group-hover/item:scale-[1.03]",
                   ].join(" ")}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                  {/* Inner chip keeps neutral background and existing hover/active backgrounds */}
+                  <span
                     className={[
-                      "chevronIcon transition-transform duration-200 ease-out",
-                      isOpen ? "rotate-90" : "rotate-0",
+                      "inline-flex items-center justify-center",
+                      "h-full w-full rounded-full",
+                      // interior is white to keep Ocean cleanliness
+                      "bg-white",
+                      // we remove previous border on this inner chip because the outer wrapper supplies gradient ring
+                      // but we preserve state-based soft fills
+                      isOpen ? "bg-indigo-50" : "bg-white",
+                      "transition-colors duration-150 ease-out",
                     ].join(" ")}
                   >
-                    <path
-                      d="M9 18l6-6-6-6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                    {/* SVG chevron with gradient stroke to match header gradient */}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={[
+                        "chevronIcon transition-transform duration-200 ease-out",
+                        isOpen ? "rotate-90" : "rotate-0",
+                      ].join(" ")}
+                      role="img"
+                      aria-label={isOpen ? "Collapse" : "Expand"}
+                    >
+                      <defs>
+                        <linearGradient
+                          id={gradId}
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="100%"
+                        >
+                          <stop offset="10%" stopColor="#af2497" />
+                          <stop offset="20%" stopColor="#902d9a" />
+                          <stop offset="100%" stopColor="#1840a0" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M9 18l6-6-6-6"
+                        stroke={`url(#${gradId})`}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
                 </span>
               </button>
 
@@ -204,9 +247,7 @@ export default function Accordion() {
                   isOpen
                     ? [
                         "max-h-[600px] opacity-100 py-3",
-                        // Keep subtle content background; the gradient stripe is separate on the left
                         "bg-blue-50",
-                        // subtle top divider
                         "border-t border-slate-200",
                       ].join(" ")
                     : "max-h-0 opacity-0 py-0",
