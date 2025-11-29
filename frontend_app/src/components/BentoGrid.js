@@ -12,64 +12,88 @@ import React from "react";
  *
  * Interaction: Subtle scale-only hover and focus-visible effect is applied to each
  * card container (mirrors Accordion’s interaction approach). No color changes on hover.
+ *
+ * Update:
+ * - Prevent hover scale from creating empty layout space by ensuring transforms
+ *   do not affect layout: GPU transforms, will-change, overflow-hidden on wrapper,
+ *   centered origin, and small scale.
+ * - Restore/maintain a non-uniform mosaic using CSS grid with grid-auto-rows and
+ *   varied col/row spans for asymmetric layout.
  */
 export default function BentoGrid() {
-  // Added four more items; kept spans to form a pleasing responsive mosaic.
+  // Create a deliberate, asymmetric mosaic via column and row spans.
+  // rowSpan uses Tailwind row-span utilities supported by grid-auto-rows below.
   const cards = [
-    { title: "Fast", desc: "Optimized build with minimal dependencies.", span: "md:col-span-2" },
-    { title: "Themed", desc: "Ocean Professional palette out-of-the-box.", span: "" },
-    { title: "Responsive", desc: "Mobile-first, adapts to all screen sizes.", span: "" },
-    { title: "Accessible", desc: "Usability and semantics considered.", span: "md:col-span-2" },
-    // New cards
-    { title: "Composable", desc: "Small primitives you can combine for richer UIs.", span: "" },
-    { title: "Performant", desc: "Snappy transitions and lightweight runtime.", span: "" },
-    { title: "Customizable", desc: "Tweak tokens, radius, and spacing easily.", span: "md:col-span-2" },
-    { title: "Documented", desc: "Clear guidance and comments in code.", span: "" },
+    { title: "Fast", desc: "Optimized build with minimal dependencies.", colSpan: "md:col-span-2", rowSpan: "row-span-2" },
+    { title: "Themed", desc: "Ocean Professional palette out-of-the-box.", colSpan: "", rowSpan: "row-span-1" },
+    { title: "Responsive", desc: "Mobile-first, adapts to all screen sizes.", colSpan: "", rowSpan: "row-span-1" },
+    { title: "Accessible", desc: "Usability and semantics considered.", colSpan: "md:col-span-2", rowSpan: "row-span-1" },
+    { title: "Composable", desc: "Small primitives you can combine for richer UIs.", colSpan: "", rowSpan: "row-span-2" },
+    { title: "Performant", desc: "Snappy transitions and lightweight runtime.", colSpan: "", rowSpan: "row-span-1" },
+    { title: "Customizable", desc: "Tweak tokens, radius, and spacing easily.", colSpan: "md:col-span-2", rowSpan: "row-span-2" },
+    { title: "Documented", desc: "Clear guidance and comments in code.", colSpan: "", rowSpan: "row-span-1" },
   ];
 
   const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div
+      // Use grid-auto-rows to establish a base track size so row-span works as a masonry-like mosaic.
+      // The small base (e.g., 8 or 10) allows fine-grained height increments without layout jumps.
+      className="grid grid-cols-1 md:grid-cols-3 gap-4 [grid-auto-rows:10px]"
+    >
       {cards.map((c, i) => (
         <div
           key={i}
-          // Use group to allow nested hover effects if needed; apply scale-only transitions.
+          // Parent wrapper prevents scaled child from affecting layout and clipping rounded corners
           className={[
-            "surface overflow-hidden",
-            c.span,
-            "transform transition-transform duration-200 ease-out",
-            "hover:scale-[1.015] focus-within:scale-[1.015]",
+            "relative rounded-xl",          // keep rounding on outermost container
+            "overflow-hidden",              // clip any scaled child overflow
+            c.colSpan,
+            c.rowSpan,
           ].join(" ")}
         >
-          {/* Gradient header bar */}
+          {/* inner card applies transform without layout shift */}
           <div
-            className="px-5 py-3"
-            style={{
-              background: headerGradient,
-              color: "#fff",
-            }}
+            className={[
+              "surface h-full", // ensure fills the grid area
+              // GPU transform + contained paint for smoother transitions
+              "transform-gpu will-change-transform",
+              // centered origin to avoid directional push
+              "origin-center",
+              // subtle scale only on hover/focus-visible; keep small to avoid any perceived gaps
+              "transition-transform duration-200 ease-out",
+              "hover:scale-[1.01] focus-within:scale-[1.01]",
+            ].join(" ")}
           >
-            <h3 className="text-base sm:text-lg font-semibold leading-6">
-              {c.title}
-            </h3>
-          </div>
+            {/* Gradient header bar */}
+            <div
+              className="px-5 py-3"
+              style={{
+                background: headerGradient,
+                color: "#fff",
+              }}
+            >
+              <h3 className="text-base sm:text-lg font-semibold leading-6">
+                {c.title}
+              </h3>
+            </div>
 
-          {/* Card body */}
-          <div className="p-5">
-            <p className="text-sm text-gray-600">{c.desc}</p>
+            {/* Card body */}
+            <div className="p-5">
+              <p className="text-sm text-gray-600">{c.desc}</p>
 
-            {/* Example interactive element to ensure accessible focus within the card; */}
-            {/* keeps focus-visible ring without color change on hover */}
-            <div className="mt-4 flex items-center justify-between">
-              <div className="h-24 flex-1 rounded-lg bg-blue-50" />
-              <a
-                href="#"
-                className="ml-4 rounded-full px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:opacity-95 focus-ring"
-              >
-                Details
-              </a>
+              {/* Interactive element retains focus-visible styling */}
+              <div className="mt-4 flex items-center justify-between">
+                <div className="h-24 flex-1 rounded-lg bg-blue-50" />
+                <a
+                  href="#"
+                  className="ml-4 rounded-full px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:opacity-95 focus-ring"
+                >
+                  Details
+                </a>
+              </div>
             </div>
           </div>
         </div>
