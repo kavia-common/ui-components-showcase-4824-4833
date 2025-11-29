@@ -93,13 +93,17 @@ export default function Accordion() {
           const panelId = `${baseId}-acc-panel-${idx}`;
 
           return (
+            // Wrapper acts as the group to enable hover/focus styles over the entire item (header + content)
             <div
               key={headerId}
               className={[
-                "bg-white rounded-[12px] border",
+                "group/item bg-white rounded-[12px] border",
                 borderSubtle,
-                // Remove hover shadow; rely on a faint ring on hover via header
-                "transition-shadow duration-150 ease-out",
+                // Subtle hover/focus-visible background tint and faint ring applied to the whole item
+                "transition-all duration-150 ease-out",
+                "hover:bg-slate-50/25 focus-within:bg-slate-50/25",
+                // very light ring on hover or when header focused
+                "hover:ring-1 hover:ring-blue-500/15 focus-within:ring-1 focus-within:ring-blue-500/20",
                 "shadow-none",
               ].join(" ")}
             >
@@ -111,23 +115,22 @@ export default function Accordion() {
                 onClick={() => toggle(idx)}
                 className={[
                   // Clickable header area
-                  "group w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5",
+                  "w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5",
                   "sm:px-4 sm:py-2.5 md:px-4 md:py-2.5 lg:px-4 lg:py-2",
                   textStrong,
                   "font-semibold text-[16px] leading-[1.35]",
                   "rounded-[12px]",
                   // Softer transitions
                   "transition-colors duration-150 ease-out",
-                  // Lower background tint for hover/focus-visible (barely-there)
-                  "hover:bg-slate-50/25 focus-visible:bg-slate-50/25",
-                  // Minimal focus ring
+                  // Header no longer owns the hover bg; it's provided by the wrapper via group hover/focus-within
+                  // Keep minimal focus ring for accessibility
                   "focus:outline-none",
                   focusRing,
                 ].join(" ")}
               >
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron chip (behavior unchanged; feedback softened) */}
+                {/* Chevron chip keeps group-based feedback but now references the wrapper group via group/item */}
                 <span
                   aria-hidden="true"
                   className={[
@@ -135,18 +138,14 @@ export default function Accordion() {
                     "h-7 w-7 rounded-full bg-white",
                     "border",
                     isOpen ? borderStrong : borderSubtle,
-                    // Faster, softer transitions
                     "transition-all duration-150 ease-out",
                     isOpen ? "rotate-90" : "rotate-0",
-                    // icon color muted; darken slightly on group hover/focus
                     isOpen ? "text-slate-600" : iconMuted,
-                    "group-hover:text-slate-600 group-focus-visible:text-slate-600",
-                    // very subtle border emphasis on hover/focus
-                    "group-hover:border-sky-300 group-focus-visible:border-sky-300",
-                    // dial down chip bg tint further (or effectively none)
-                    "group-hover:bg-slate-50/20 group-focus-visible:bg-slate-50/20",
-                    // add a faint outline/ring on group-hover via ring classes (using primary color very lightly)
-                    "group-hover:ring-1 group-hover:ring-blue-500/15 group-focus-visible:ring-1 group-focus-visible:ring-blue-500/20",
+                    // Use wrapper group (group/item) for hover and focus-visible feedback across the whole item
+                    "group-hover/item:text-slate-600 group-focus-within/item:text-slate-600",
+                    "group-hover/item:border-sky-300 group-focus-within/item:border-sky-300",
+                    "group-hover/item:bg-slate-50/20 group-focus-within/item:bg-slate-50/20",
+                    "group-hover/item:ring-1 group-hover/item:ring-blue-500/15 group-focus-within/item:ring-1 group-focus-within/item:ring-blue-500/20",
                   ].join(" ")}
                 >
                   <svg
@@ -174,7 +173,6 @@ export default function Accordion() {
                 role="region"
                 aria-labelledby={headerId}
                 className={[
-                  // Slightly reduced horizontal padding and vertical rhythm
                   "px-3.5 sm:px-4 md:px-4",
                   "transition-all duration-300 ease-out",
                   isOpen ? "max-h-[600px] opacity-100 py-2.5 md:py-2" : "max-h-0 opacity-0 py-0",
