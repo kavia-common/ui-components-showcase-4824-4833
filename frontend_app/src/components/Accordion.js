@@ -99,11 +99,10 @@ export default function Accordion() {
               className={[
                 "group/item bg-white rounded-[12px] border",
                 borderSubtle,
-                // Subtle hover/focus-visible background tint and faint ring applied to the whole item
-                "transition-all duration-150 ease-out",
-                "hover:bg-slate-50/25 focus-within:bg-slate-50/25",
-                // very light ring on hover or when header focused
-                "hover:ring-1 hover:ring-blue-500/15 focus-within:ring-1 focus-within:ring-blue-500/20",
+                // Performance-friendly transform scaling for hover and keyboard focus
+                "transform transition-transform duration-200 ease-out",
+                "hover:scale-[1.015] focus-within:scale-[1.015]",
+                // Preserve neutral surface without color-change on hover/focus
                 "shadow-none",
               ].join(" ")}
             >
@@ -120,9 +119,8 @@ export default function Accordion() {
                   textStrong,
                   "font-semibold text-[16px] leading-[1.35]",
                   "rounded-[12px]",
-                  // Softer transitions
-                  "transition-colors duration-150 ease-out",
-                  // Header no longer owns the hover bg; it's provided by the wrapper via group hover/focus-within
+                  // Limit transitions to transform-related changes; avoid color changes
+                  "transition-transform duration-200 ease-out",
                   // Keep minimal focus ring for accessibility
                   "focus:outline-none",
                   focusRing,
@@ -130,7 +128,7 @@ export default function Accordion() {
               >
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron chip keeps group-based feedback but now references the wrapper group via group/item */}
+                {/* Chevron chip maintains border and subtle emphasis when open; no color hover changes */}
                 <span
                   aria-hidden="true"
                   className={[
@@ -138,14 +136,9 @@ export default function Accordion() {
                     "h-7 w-7 rounded-full bg-white",
                     "border",
                     isOpen ? borderStrong : borderSubtle,
-                    "transition-all duration-150 ease-out",
+                    "transition-transform duration-150 ease-out",
                     isOpen ? "rotate-90" : "rotate-0",
                     isOpen ? "text-slate-600" : iconMuted,
-                    // Use wrapper group (group/item) for hover and focus-visible feedback across the whole item
-                    "group-hover/item:text-slate-600 group-focus-within/item:text-slate-600",
-                    "group-hover/item:border-sky-300 group-focus-within/item:border-sky-300",
-                    "group-hover/item:bg-slate-50/20 group-focus-within/item:bg-slate-50/20",
-                    "group-hover/item:ring-1 group-hover/item:ring-blue-500/15 group-focus-within/item:ring-1 group-focus-within/item:ring-blue-500/20",
                   ].join(" ")}
                 >
                   <svg
