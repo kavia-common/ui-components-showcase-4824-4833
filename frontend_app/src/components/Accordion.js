@@ -15,15 +15,12 @@ import React, { useId, useMemo, useState, useCallback } from "react";
  * - Accessibility: visible focus ring on header, retains aria attributes
  *
  * Enhancement:
- * - Add subtle gradient left border (2.5px) on header using app header/footer gradient.
- * - The gradient stripe extends through the entire item only when open for visual continuity.
+ * - Add animated gradient left border (≈3px) that smoothly extends from header into the full item when open,
+ *   and retracts on collapse using height/opacity/clip-path transitions for performance.
  * - Preserve rounded corners and avoid overflow/clipping.
  *
  * Additional update:
- * - Chevron/arrow icon now visually matches the header gradient by:
- *   1) Using an SVG linearGradient for the chevron stroke.
- *   2) Wrapping the icon chip in a 1px gradient ring via background-clip without altering interior fill.
- *   Both preserve size (28px chip, 16px glyph), rotation, scale-only hover, focus-visible, and responsiveness.
+ * - Chevron/arrow icon uses a gradient stroke to match the header gradient and keeps the 28px chip with a gradient ring.
  */
 export default function Accordion() {
   // Expanded FAQ list based on design notes (assets/accordion_design_notes.md)
@@ -83,30 +80,31 @@ export default function Accordion() {
 
   // Ocean Professional-aligned tokens
   const borderDefault = "border-gray-200"; // aligns with --border-default
-  const borderStrong = "border-slate-300"; // aligns with --border-strong
   const textStrong = "text-slate-900"; // --text-strong
   const textDefault = "text-slate-700"; // --text-default
-  const iconDefault = "text-slate-500"; // --chevron
-  const iconActive = "text-indigo-600"; // --chevron-active
 
   // Focus-visible ring tuned to design notes (indigo-400-ish)
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400/60";
 
-  // Gradient stripe style updated per request to match header/footer gradient
-  // This stripe applies to the left border of the question/header, and when open it
-  // extends through the entire item for continuity.
-  const gradientStyle = {
-    background:
-      "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+  // Gradient style reused for stripe and icon ring
+  const gradientCSS =
+    "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+
+  // Gradient stripe: animated using height + opacity + clipPath for smoothness.
+  // When closed: height = header height (~48px), slight opacity; clip-path trims to header area.
+  // When open: height = full, opacity = 1, clip-path reveals full column.
+  const gradientStripeBase = {
+    background: gradientCSS,
+    willChange: "height, opacity, clip-path, transform",
+    transition:
+      "height 240ms ease-out, opacity 220ms ease-out, clip-path 260ms ease-out",
   };
 
   // PUBLIC_INTERFACE
   // Small helper returning gradient ring style for the icon wrapper.
-  // We use 1px padding plus a white inner to simulate a gradient border.
   const gradientRingStyle = {
-    background:
-      "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+    background: gradientCSS,
     padding: "1px",
     borderRadius: "9999px",
   };
@@ -125,6 +123,9 @@ export default function Accordion() {
           const panelId = `${baseId}-acc-panel-${idx}`;
           const gradId = `${baseId}-chev-grad-${idx}`;
 
+          // Header visual height target when collapsed, used for stripe baseline height.
+          const headerHeight = 48;
+
           return (
             <div
               key={headerId}
@@ -134,17 +135,24 @@ export default function Accordion() {
                 "transform transition-transform duration-200 ease-out",
                 "hover:scale-[1.015] focus-within:scale-[1.015]",
                 "shadow-none",
-                "relative overflow-hidden", // ensure gradient stripe respects rounding; no clipping of content
+                "relative overflow-hidden", // preserve rounded corners and avoid bleed
               ].join(" ")}
             >
-              {/* Gradient stripe — header-only by default; extends full item when open */}
+              {/* Animated gradient stripe at the left edge */}
               <div
                 aria-hidden="true"
-                className={[
-                  "absolute left-0 top-0 w-[3px] rounded-l-[12px]",
-                  isOpen ? "h-full" : "h-[48px] sm:h-[48px] md:h-[48px]",
-                ].join(" ")}
-                style={gradientStyle}
+                className="absolute left-0 top-0 w-[3px] rounded-l-[12px] pointer-events-none"
+                style={{
+                  ...gradientStripeBase,
+                  // Height animates from header's height to full item height
+                  height: isOpen ? "100%" : `${headerHeight}px`,
+                  // Subtle opacity when closed to avoid a harsh cutoff
+                  opacity: isOpen ? 1 : 0.9,
+                  // Clip-path reveals only the header area when closed; full column when open
+                  clipPath: isOpen
+                    ? "inset(0% 0% 0% 0% round 12px)"
+                    : "inset(0% 0% calc(100% - 48px) 0% round 12px)",
+                }}
               />
 
               <button
@@ -163,7 +171,7 @@ export default function Accordion() {
                   "font-semibold text-[16px] leading-6",
                   // Header-specific radius to 8px while the item keeps 12px overall
                   "rounded-[8px]",
-                  // Subtle header hover bg and border shift while preserving item-level scale as primary hover affordance
+                  // Subtle header hover bg while preserving item-level scale as primary hover
                   "transition-colors duration-150 ease-out",
                   focusRing,
                 ].join(" ")}
@@ -174,7 +182,6 @@ export default function Accordion() {
                 {/* Chevron container: gradient ring + neutral interior, 28px chip, 16px icon */}
                 <span
                   aria-hidden="true"
-                  // Outer ring: gradient border (1px) using background + padding
                   style={gradientRingStyle}
                   className={[
                     "inline-flex items-center justify-center",
@@ -189,10 +196,7 @@ export default function Accordion() {
                     className={[
                       "inline-flex items-center justify-center",
                       "h-full w-full rounded-full",
-                      // interior is white to keep Ocean cleanliness
                       "bg-white",
-                      // we remove previous border on this inner chip because the outer wrapper supplies gradient ring
-                      // but we preserve state-based soft fills
                       isOpen ? "bg-indigo-50" : "bg-white",
                       "transition-colors duration-150 ease-out",
                     ].join(" ")}
@@ -236,13 +240,14 @@ export default function Accordion() {
                 </span>
               </button>
 
-              {/* Panel: keep existing smooth transition and readable body typescale */}
+              {/* Panel: smooth transition preserved; spacing/typography unchanged */}
               <div
                 id={panelId}
                 role="region"
                 aria-labelledby={headerId}
                 className={[
                   "px-4",
+                  // prefer transition-all for max-height/opacity/padding
                   "transition-all duration-300 ease-out",
                   isOpen
                     ? [
