@@ -6,11 +6,13 @@ import React, { useId, useMemo, useState, useCallback } from "react";
  * Ocean Professional-styled FAQ accordion with accessible semantics,
  * smooth motion, chevron chip, and responsive spacing/typography.
  *
- * - Layout: centered container, card-like items with 12px radius and subtle borders.
- * - Typography: 16px/semibold title, 14–15px body; strong/default text tokens via Tailwind.
- * - Icon: Chevron-right in a 28px circular chip; rotates 90° when expanded.
- * - Motion: max-height and opacity transitions on panel; 160–260ms ease timings.
- * - Accessibility: button headers with aria-expanded + aria-controls; panels role="region".
+ * Updated header/question styling per assets/accordion_header_design_notes.md:
+ * - Typography: 16px, weight 600, line-height 24px, left-aligned
+ * - Spacing: 12px y / 16px x padding, 12px gap to chevron
+ * - Chevron: 28px circular hit area, 16px glyph, right-aligned, rotates 90° when expanded
+ * - Borders/dividers: 1px item border; header hover shifts only border color and soft background
+ * - Interaction: item-level hover remains scale-only; no color change beyond allowed subtle header bg
+ * - Accessibility: visible focus ring on header, retains aria attributes
  */
 export default function Accordion() {
   // Expanded FAQ list based on design notes (assets/accordion_design_notes.md)
@@ -68,16 +70,17 @@ export default function Accordion() {
     setOpen((current) => (current === idx ? -1 : idx));
   }, []);
 
-  // Tailwind-mapped tokens aligned to Ocean Professional notes
-  const borderSubtle = "border-sky-200"; // --border-subtle
-  const borderStrong = "border-sky-300"; // --border-strong (hover/active feedback)
+  // Ocean Professional-aligned tokens
+  const borderDefault = "border-gray-200"; // aligns with --border-default
+  const borderStrong = "border-slate-300"; // aligns with --border-strong
   const textStrong = "text-slate-900"; // --text-strong
   const textDefault = "text-slate-700"; // --text-default
-  const iconMuted = "text-slate-400"; // --icon-muted
+  const iconDefault = "text-slate-500"; // --chevron
+  const iconActive = "text-indigo-600"; // --chevron-active
 
-  // Keep focus-visible accessibility, but make it minimal/soft using primary color with low opacity
+  // Focus-visible ring tuned to design notes (indigo-400-ish)
   const focusRing =
-    "focus-visible:ring-blue-500/30 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400/60";
 
   return (
     <section
@@ -85,24 +88,21 @@ export default function Accordion() {
       aria-label="Frequently Asked Questions"
       className="mx-auto w-full max-w-3xl md:max-w-4xl lg:max-w-5xl"
     >
-      {/* Reduce vertical gaps between items (desktop tighter) */}
-      <div className="grid gap-3 md:gap-2.5 lg:gap-2">
+      {/* Maintain item-level hover scale only, as requested */}
+      <div className="grid gap-3 md:gap-3 lg:gap-3">
         {items.map((it, idx) => {
           const isOpen = open === idx;
           const headerId = `${baseId}-acc-header-${idx}`;
           const panelId = `${baseId}-acc-panel-${idx}`;
 
           return (
-            // Wrapper acts as the group to enable hover/focus styles over the entire item (header + content)
             <div
               key={headerId}
               className={[
                 "group/item bg-white rounded-[12px] border",
-                borderSubtle,
-                // Performance-friendly transform scaling for hover and keyboard focus
+                borderDefault,
                 "transform transition-transform duration-200 ease-out",
                 "hover:scale-[1.015] focus-within:scale-[1.015]",
-                // Preserve neutral surface without color-change on hover/focus
                 "shadow-none",
               ].join(" ")}
             >
@@ -112,33 +112,43 @@ export default function Accordion() {
                 aria-controls={panelId}
                 aria-expanded={isOpen}
                 onClick={() => toggle(idx)}
+                // Header/question row per header spec
                 className={[
-                  // Clickable header area
-                  "w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5",
-                  "sm:px-4 sm:py-2.5 md:px-4 md:py-2.5 lg:px-4 lg:py-2",
+                  "w-full flex items-center justify-between gap-3",
+                  // padding 12px y / 16px x
+                  "px-4 py-3",
+                  // Typography 16px/24px semibold; keep left-aligned
                   textStrong,
-                  "font-semibold text-[16px] leading-[1.35]",
-                  "rounded-[12px]",
-                  // Limit transitions to transform-related changes; avoid color changes
-                  "transition-transform duration-200 ease-out",
-                  // Keep minimal focus ring for accessibility
-                  "focus:outline-none",
+                  "font-semibold text-[16px] leading-6",
+                  // Header-specific radius to 8px while the item keeps 12px overall
+                  "rounded-[8px]",
+                  // Subtle header hover bg and border shift while preserving item-level scale as primary hover affordance
+                  "transition-colors duration-150 ease-out",
                   focusRing,
                 ].join(" ")}
               >
+                {/* Question text stays left, no color change on hover */}
                 <span className="flex-1 text-left">{it.q}</span>
 
-                {/* Chevron chip maintains border and subtle emphasis when open; no color hover changes */}
+                {/* Chevron container: 28px circle, 16px icon; right-aligned */}
                 <span
                   aria-hidden="true"
                   className={[
-                    "inline-grid place-items-center",
-                    "h-7 w-7 rounded-full bg-white",
-                    "border",
-                    isOpen ? borderStrong : borderSubtle,
-                    "transition-transform duration-150 ease-out",
-                    isOpen ? "rotate-90" : "rotate-0",
-                    isOpen ? "text-slate-600" : iconMuted,
+                    "inline-flex items-center justify-center",
+                    // minimum 28px area; use 7 as Tailwind scale is 1.75rem? Use explicit values for precision:
+                    "h-[28px] w-[28px] rounded-full",
+                    // default transparent bg; bordered circle matches design
+                    "bg-transparent border",
+                    isOpen ? "bg-indigo-50" : "",
+                    isOpen ? "border-indigo-600" : borderDefault,
+                    // color transitions for icon
+                    "transition-colors duration-150 ease-out",
+                    // If header hovered, slightly tint and strengthen border without global color shifts
+                    "group/item:hover:bg-indigo-50/60 group/item:hover:border-slate-300",
+                    // Improve focus visibility when header focused
+                    "shadow-none",
+                    // Icon color rules; keep active indigo when open
+                    isOpen ? iconActive : iconDefault,
                   ].join(" ")}
                 >
                   <svg
@@ -147,7 +157,10 @@ export default function Accordion() {
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="transition-transform duration-150 ease-out"
+                    className={[
+                      "chevronIcon transition-transform duration-200 ease-out",
+                      isOpen ? "rotate-90" : "rotate-0",
+                    ].join(" ")}
                   >
                     <path
                       d="M9 18l6-6-6-6"
@@ -160,34 +173,28 @@ export default function Accordion() {
                 </span>
               </button>
 
-              {/* Panel: animate max-height and opacity (keep smoothness, slightly quicker ease-out) */}
+              {/* Panel: keep existing smooth transition and readable body typescale */}
               <div
                 id={panelId}
                 role="region"
                 aria-labelledby={headerId}
                 className={[
-                  // padding remains consistent with design notes
-                  "px-3.5 sm:px-4 md:px-4",
-                  // smooth expand/collapse
+                  "px-4",
                   "transition-all duration-300 ease-out",
-                  // open/closed state styles
                   isOpen
                     ? [
-                        // spacing when open
-                        "max-h-[600px] opacity-100 py-2.5 md:py-2",
-                        // Slightly darker light background for expanded content (one step deeper)
-                        // Use a cool-neutral wash to align with Ocean Professional and keep contrast accessible
+                        "max-h-[600px] opacity-100 py-3",
+                        // No aggressive background shifts; keep a very light wash optional if desired
                         "bg-blue-50",
-                        // subtle top divider to preserve separation from header area (only when open)
+                        // subtle top divider
                         "border-t border-slate-200",
                       ].join(" ")
                     : "max-h-0 opacity-0 py-0",
                   "overflow-hidden",
                   textDefault,
-                  "text-[15px] leading-[1.5]",
+                  "text-[15px] leading-[1.55]",
                 ].join(" ")}
               >
-                {/* Reduce inner spacing within content and ensure readable text on light background */}
                 <div className="pb-0.5 text-slate-800">{it.a}</div>
               </div>
             </div>
