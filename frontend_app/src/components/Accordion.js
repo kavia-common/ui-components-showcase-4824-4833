@@ -166,16 +166,29 @@ export default function Accordion() {
                 role="region"
                 aria-labelledby={headerId}
                 className={[
+                  // padding remains consistent with design notes
                   "px-3.5 sm:px-4 md:px-4",
+                  // smooth expand/collapse
                   "transition-all duration-300 ease-out",
-                  isOpen ? "max-h-[600px] opacity-100 py-2.5 md:py-2" : "max-h-0 opacity-0 py-0",
+                  // open/closed state styles
+                  isOpen
+                    ? [
+                        // spacing when open
+                        "max-h-[600px] opacity-100 py-2.5 md:py-2",
+                        // Ocean Professional aligned light background on expanded content
+                        // use a very light, neutral-cool wash to keep contrast high
+                        "bg-blue-50/50",
+                        // subtle top divider to preserve separation from header area
+                        "border-t border-sky-100",
+                      ].join(" ")
+                    : "max-h-0 opacity-0 py-0",
                   "overflow-hidden",
                   textDefault,
                   "text-[15px] leading-[1.5]",
                 ].join(" ")}
               >
-                {/* Reduce inner spacing within content */}
-                <div className="pb-0.5">{it.a}</div>
+                {/* Reduce inner spacing within content and ensure readable text on light background */}
+                <div className="pb-0.5 text-slate-800">{it.a}</div>
               </div>
             </div>
           );
