@@ -7,7 +7,7 @@ import Accordion from "./components/Accordion";
 import BentoGrid from "./components/BentoGrid";
 import Breadcrumbs from "./components/Breadcrumbs";
 import Carousel from "./components/Carousel";
-import ChatbotStub from "./components/ChatbotStub";
+
 import FormWizard from "./components/FormWizard";
 import Testimonial from "./components/Testimonial";
 import ToastDemo from "./components/ToastDemo";
@@ -82,7 +82,6 @@ function App() {
   const moreItems = useMemo(
     () => [
       { key: "carousel", label: "Carousel" },
-      { key: "chatbot", label: "Chatbot (UI)" },
       { key: "wizard", label: "Form Wizard" },
       { key: "testimonial", label: "Testimonial" },
       { key: "toast", label: "Toast" },
@@ -454,7 +453,6 @@ function App() {
           {active === "bento" && <BentoGrid />}
           {active === "breadcrumbs" && <Breadcrumbs />}
           {active === "carousel" && <Carousel />}
-          {active === "chatbot" && <ChatbotStub />}
           {active === "wizard" && <FormWizard />}
           {active === "testimonial" && <Testimonial />}
           {active === "toast" && <ToastDemo />}

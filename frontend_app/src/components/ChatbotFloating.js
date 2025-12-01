@@ -35,6 +35,19 @@ export default function ChatbotFloating() {
   useEffect(() => {
     if (!open) return;
 
+    // Lock background scroll while open
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+    try {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+    } catch {
+      /* noop */
+    }
+
     const onKeyDown = (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -75,6 +88,9 @@ export default function ChatbotFloating() {
     window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("mousedown", onMouseDown, true);
     return () => {
+      // restore scroll
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("mousedown", onMouseDown, true);
     };
@@ -108,11 +124,15 @@ export default function ChatbotFloating() {
       aria-labelledby="chatbot-panel-title"
       aria-describedby="chatbot-panel-desc"
       ref={panelRef}
-      className="fixed z-[1000] right-4 bottom-20 sm:bottom-24 w-[min(92vw,380px)] sm:w-[min(92vw,420px)] rounded-2xl shadow-soft border border-white/30 overflow-hidden"
+      className="fixed z-[1000] rounded-none sm:rounded-2xl shadow-soft border border-white/30 overflow-hidden
+                 inset-0 sm:inset-auto sm:right-4 sm:bottom-24 sm:w-[min(92vw,420px)] sm:max-h-[80vh]"
       style={{
+        // On small screens, full-bleed subtle scrim background behind the panel content; on sm+ keep translucent card
         background:
-          "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.92) 100%)",
-        backdropFilter: "saturate(140%) blur(6px)",
+          window.innerWidth < 640
+            ? "#ffffff"
+            : "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.92) 100%)",
+        backdropFilter: window.innerWidth < 640 ? "none" : "saturate(140%) blur(6px)",
       }}
     >
       {/* Panel header with gradient bar */}
@@ -155,7 +175,7 @@ export default function ChatbotFloating() {
       </div>
 
       {/* Content area: reuse ChatbotStub for demo */}
-      <div className="max-h-[60vh] sm:max-h-[65vh] overflow-auto">
+      <div className="h-[calc(100vh-48px-48px)] sm:h-auto sm:max-h-[70vh] overflow-auto">
         <ChatbotStub />
       </div>
     </div>
@@ -208,7 +228,7 @@ export default function ChatbotFloating() {
       {open &&
         ReactDOM.createPortal(
           <>
-            {/* Click-catcher for outside clicks */}
+            {/* Backdrop (transparent on desktop, dim on small screens) and outside click handler */}
             <div
               aria-hidden="true"
               onMouseDown={(e) => {
@@ -219,8 +239,7 @@ export default function ChatbotFloating() {
                   requestAnimationFrame(() => launcherRef.current?.focus());
                 }
               }}
-              className="fixed inset-0 z-[998]"
-              style={{ background: "transparent" }}
+              className="fixed inset-0 z-[998] sm:bg-transparent bg-black/30"
             />
             <div id="chatbot-floating-panel" className="z-[1000]">
               <Panel />
