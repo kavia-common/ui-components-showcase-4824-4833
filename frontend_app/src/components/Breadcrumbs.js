@@ -43,9 +43,11 @@ export default function Breadcrumbs() {
     const linkClasses = [
       baseType,
       "font-medium",
-      "text-[var(--color-primary)]",
+      // Darker-than-primary default link color (roughly Tailwind blue-700 / #1E40AF)
+      "text-[#1E40AF]",
       "hover:underline underline-offset-2 decoration-blue-400/70",
       "px-0.5 py-0.5 rounded-md",
+      // Keep focus-visible ring aligned to primary for accessibility consistency
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-white",
       "transition-colors",
     ].join(" ");
