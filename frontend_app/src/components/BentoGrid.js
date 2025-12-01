@@ -17,7 +17,7 @@ export default function BentoGrid() {
    * - C1 Toolshelf, C2 Division, C3 Latest Update, C4 CSR
    * - Section label: Employee Connect
    * - E row: Clubs, Events, News
-   * - F row: Birthdays, Work Anniversaries, Recognitions
+   * - Note: Removed Birthdays, Work Anniversaries, and Recognitions per request.
    */
   const tiles = [
     { key: "hero", title: "Dixon’s Value Proposition (EVP)", variant: "gradient-hero", spans: "col-span-12 lg:col-span-8", minH: "min-h-[170px]" },
@@ -37,10 +37,6 @@ export default function BentoGrid() {
     { key: "clubs", title: "Clubs", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
     { key: "events", title: "Events", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
     { key: "news", title: "News", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
-
-    { key: "birthdays", title: "Birthdays", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
-    { key: "anniv", title: "Work Anniversaries", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
-    { key: "reco", title: "Recognitions", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
   ];
 
   // Shared styles
@@ -327,51 +323,6 @@ export default function BentoGrid() {
               <div key={i} className="min-w-[140px] snap-start rounded-lg bg-white shadow-sm overflow-hidden">
                 <div className="h-20 bg-slate-200" />
                 <div className="p-2 text-sm">Headline {i + 1}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (t.key === "birthdays" || t.key === "anniv") {
-      return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label={`View all ${t.key === "birthdays" ? "birthdays" : "anniversaries"}`}>
-              View All
-            </a>
-          </div>
-          <div className="mt-3 flex gap-3 overflow-x-auto snap-x snap-mandatory">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="min-w-[120px] snap-start rounded-lg bg-slate-50 p-3 flex flex-col items-center gap-2 hover:shadow transition">
-                <div className="h-12 w-12 rounded-full bg-slate-200" aria-hidden="true" />
-                <div className="text-sm font-medium text-slate-800">Person {i + 1}</div>
-                <div className="text-[12px] text-slate-500">{t.key === "birthdays" ? "Dec 12" : "2 yrs"}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (t.key === "reco") {
-      return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <h3 id={`tile-${t.key}-title`} className={titleClass}>
-            {t.title}
-          </h3>
-          <div className="mt-3 space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-lg bg-slate-50 p-3 flex gap-3 items-center">
-                <div className="h-8 w-8 rounded-full bg-amber-200" aria-hidden="true" />
-                <div className="min-w-0">
-                  <p className="text-sm text-slate-800">Recognition {i + 1}</p>
-                  <p className="text-[12px] text-slate-500">Great job on the Q4 launch.</p>
-                </div>
               </div>
             ))}
           </div>
