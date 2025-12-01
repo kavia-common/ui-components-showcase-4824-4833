@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import "./index.css";
 
 import Hero from "./components/Hero";
@@ -22,13 +22,25 @@ function App() {
    */
   const [active, setActive] = useState("hero");
 
-  // Only component demo items are kept for the navbar as per requirements
-  const items = useMemo(
+  // Track "More" dropdown open state and anchor/refs for a11y keyboard navigation
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreBtnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Top-level primary items and "more" groups
+  const primaryItems = useMemo(
     () => [
       { key: "hero", label: "Hero" },
       { key: "accordion", label: "Accordion" },
-      { key: "bento", label: "Bento Grid" },
+      { key: "bento", label: "Bento" },
       { key: "breadcrumbs", label: "Breadcrumbs" },
+    ],
+    []
+  );
+
+  // Items that go inside More dropdown
+  const moreItems = useMemo(
+    () => [
       { key: "carousel", label: "Carousel" },
       { key: "chatbot", label: "Chatbot (UI)" },
       { key: "wizard", label: "Form Wizard" },
@@ -37,6 +49,60 @@ function App() {
     ],
     []
   );
+
+  // Close the dropdown on escape or click outside; keep keyboard accessible
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setMoreOpen(false);
+        // Return focus to the More button for accessibility
+        moreBtnRef.current?.focus();
+      }
+    };
+    const onClickOutside = (e) => {
+      if (!menuRef.current) return;
+      if (
+        moreOpen &&
+        !menuRef.current.contains(e.target) &&
+        !moreBtnRef.current?.contains(e.target)
+      ) {
+        setMoreOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("mousedown", onClickOutside, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("mousedown", onClickOutside, true);
+    };
+  }, [moreOpen]);
+
+  // A11y: keyboard navigation for menu items (Up/Down/Enter)
+  const onMenuKeyDown = useCallback((e) => {
+    const items = menuRef.current?.querySelectorAll('[role="menuitem"]');
+    if (!items || items.length === 0) return;
+    const currentIndex = Array.from(items).findIndex((el) => el === document.activeElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = items[(currentIndex + 1 + items.length) % items.length];
+      next?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = items[(currentIndex - 1 + items.length) % items.length];
+      prev?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      items[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      items[items.length - 1]?.focus();
+    }
+  }, []);
+
+  const selectAndClose = useCallback((key) => {
+    setActive(key);
+    setMoreOpen(false);
+  }, []);
 
   return (
     <ToastProvider>
@@ -82,13 +148,13 @@ function App() {
                 aria-label="Component navigation"
               >
                 <ul className="flex items-center justify-end gap-2">
-                  {items.map((it) => {
+                  {primaryItems.map((it) => {
                     const isActive = active === it.key;
                     return (
                       <li key={it.key}>
                         <button
                           onClick={() => setActive(it.key)}
-                          className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-colors backdrop-blur
+                          className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring
                             ${
                               isActive
                                 ? "bg-white text-[var(--color-text)] shadow"
@@ -101,6 +167,99 @@ function App() {
                       </li>
                     );
                   })}
+
+                  {/* More dropdown */}
+                  <li className="relative">
+                    <button
+                      ref={moreBtnRef}
+                      aria-haspopup="true"
+                      aria-expanded={moreOpen}
+                      aria-controls="more-menu"
+                      onClick={() => setMoreOpen((v) => !v)}
+                      onKeyDown={(e) => {
+                        // Open with ArrowDown and focus first item
+                        if ((e.key === "Enter" || e.key === " ") && !moreOpen) {
+                          e.preventDefault();
+                          setMoreOpen(true);
+                          setTimeout(() => {
+                            const first = document.querySelector(
+                              '#more-menu [role="menuitem"]'
+                            );
+                            first?.focus();
+                          }, 0);
+                        } else if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          setMoreOpen(true);
+                          setTimeout(() => {
+                            const first = document.querySelector(
+                              '#more-menu [role="menuitem"]'
+                            );
+                            first?.focus();
+                          }, 0);
+                        }
+                      }}
+                      className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
+                        moreOpen ? "bg-white text-[var(--color-text)] shadow" : "text-white/90 hover:bg-white/10"
+                      }`}
+                    >
+                      <span style={{ textTransform: "uppercase" }}>More</span>
+                      <span className="sr-only">, additional components</span>
+                    </button>
+
+                    {/* Dropdown panel */}
+                    {moreOpen && (
+                      <div
+                        ref={menuRef}
+                        id="more-menu"
+                        role="menu"
+                        aria-label="More components"
+                        onKeyDown={onMenuKeyDown}
+                        className="absolute right-0 mt-2 min-w-[220px] rounded-xl border border-white/20 shadow-lg focus:outline-none"
+                        style={{
+                          // Semi-transparent gradient background for readability
+                          background:
+                            "linear-gradient(45deg, rgba(175,36,151,0.92) 10%, rgba(144,45,154,0.90) 20%, rgba(24,64,160,0.90) 100%)",
+                          backdropFilter: "saturate(130%) blur(6px)",
+                        }}
+                      >
+                        <ul className="py-2">
+                          {moreItems.map((it) => {
+                            const isActive = active === it.key;
+                            return (
+                              <li key={`more-${it.key}`}>
+                                <button
+                                  role="menuitem"
+                                  onClick={() => selectAndClose(it.key)}
+                                  className={`w-full text-left px-3 py-2 text-sm rounded-lg mx-2 my-1 transition-transform focus-ring ${
+                                    isActive
+                                      ? "bg-white text-[var(--color-text)] shadow"
+                                      : "text-white/95 hover:bg-white/10"
+                                  }`}
+                                  style={{
+                                    // Subtle hover effects: scale and shadow
+                                    transition: "transform 150ms ease, box-shadow 150ms ease, background 150ms ease",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = "scale(1.02)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 8px 16px rgba(0,0,0,0.18)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = "scale(1)";
+                                    e.currentTarget.style.boxShadow = "none";
+                                  }}
+                                >
+                                  <span style={{ textTransform: "uppercase" }}>
+                                    {it.label}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </li>
                 </ul>
               </nav>
             </div>
@@ -154,7 +313,7 @@ function App() {
                   {/* Right: compact links to component demos (same as navbar) */}
                   <nav aria-label="Component quick links" className="sm:text-right">
                     <ul className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
-                      {items.map((it) => {
+                      {[...primaryItems, ...moreItems].map((it) => {
                         const isActive = active === it.key;
                         return (
                           <li key={`footer-${it.key}`}>
