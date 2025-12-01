@@ -4,9 +4,9 @@ import React from "react";
  * PUBLIC_INTERFACE
  * BentoGrid
  * Responsive 12/8/6/1 column bento grid aligned to the Ocean Professional theme.
- * All tile headers now reuse the exact same unified HeaderBar component/style
- * as the first grid’s header: same gradient, height/padding, icon/title alignment,
- * typography, corner radius, and hover/focus states. Bodies and spans unchanged.
+ * All tile headers now reuse the exact same unified Header component/style
+ * as the first grid’s header: same gradient, min-height/padding, icon/title alignment,
+ * typography, radius, and focus/hover states. Bodies and spans unchanged.
  */
 export default function BentoGrid() {
   /**
@@ -38,10 +38,10 @@ export default function BentoGrid() {
   const cardTinted = `${cardBase} bg-blue-50`;
 
   // Unified header gradient with glossy radial glint (exact per requirement)
-  const baseHeaderGradient =
+  const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
   const headerGradientWithGlint =
-    `radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%), ${baseHeaderGradient}`;
+    `radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%), ${headerGradient}`;
 
   // PUBLIC_INTERFACE
   // Small header glyph (consistent across all headers)
@@ -63,23 +63,18 @@ export default function BentoGrid() {
 
   // PUBLIC_INTERFACE
   /**
-   * HeaderBar
-   * Centralized unified header: identical gradient, fixed height and padding, icon/title alignment,
+   * Header
+   * Centralized unified header: identical gradient, fixed min-height and padding, icon/title alignment,
    * typography, radius, and interaction states. No per-tile overrides or conditional styles.
    */
-  const HeaderBar = ({ id, title, right = null, className = "" }) => (
-    <div
-      className={["overflow-hidden", className].join(" ")}
-      style={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
-    >
+  const Header = ({ id, title, right = null, className = "" }) => (
+    <div className={["overflow-hidden", className].join(" ")} style={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
       <div className="w-full" style={{ background: headerGradientWithGlint }}>
         <div
           className={[
-            // fixed header height/padding and layout
             "min-h-[48px]",
             "flex items-center gap-2 md:gap-2.5",
             "px-4 py-3",
-            // color and typography
             "text-white",
           ].join(" ")}
         >
@@ -125,7 +120,7 @@ export default function BentoGrid() {
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} ${cardPlain} p-0 relative overflow-hidden`}
         >
-          <HeaderBar
+          <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
@@ -161,7 +156,7 @@ export default function BentoGrid() {
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} ${cardPlain} p-0 relative overflow-hidden`}
         >
-          <HeaderBar
+          <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
@@ -179,7 +174,7 @@ export default function BentoGrid() {
     if (t.variant === "tinted-blue") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardBase} bg-gray-50 p-4`}>
-          <HeaderBar
+          <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={
@@ -207,7 +202,7 @@ export default function BentoGrid() {
     if (t.key === "meetings") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-5 ${t.minH}`}>
-          <HeaderBar
+          <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={
@@ -233,7 +228,7 @@ export default function BentoGrid() {
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}
         >
-          <HeaderBar
+          <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={
@@ -279,7 +274,7 @@ export default function BentoGrid() {
     if (t.key === "ceo") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <HeaderBar id={`tile-${t.key}-title`} title={t.title} className="mb-3" />
+          <Header id={`tile-${t.key}-title`} title={t.title} className="mb-3" />
           <div className="flex items-start gap-3">
             <img
               alt=""
@@ -303,7 +298,7 @@ export default function BentoGrid() {
     if (t.key === "tools") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <HeaderBar
+          <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={
@@ -321,7 +316,7 @@ export default function BentoGrid() {
     if (t.key === "division") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <HeaderBar id={`tile-${t.key}-title`} title={t.title} className="mb-3" />
+          <Header id={`tile-${t.key}-title`} title={t.title} className="mb-3" />
           <div className="space-y-2">
             {["Division 2025 Edition 1", "Division 2025 Edition 2", "Division 2025 Edition 3"].map((label) => (
               <button
@@ -339,7 +334,7 @@ export default function BentoGrid() {
     if (t.key === "csr") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <HeaderBar id={`tile-${t.key}-title`} title={t.title} className="mb-3" />
+          <Header id={`tile-${t.key}-title`} title={t.title} className="mb-3" />
           <div className="grid grid-cols-2 gap-3 items-center justify-items-center">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-10 w-20 bg-gray-100 rounded-md" aria-hidden="true" />
@@ -352,7 +347,7 @@ export default function BentoGrid() {
     // Fallback plain
     return (
       <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH || ""}`}>
-        <HeaderBar id={`tile-${t.key}-title`} title={t.title} className="mb-2" />
+        <Header id={`tile-${t.key}-title`} title={t.title} className="mb-2" />
         <p className="mt-2 text-sm text-slate-600">Content</p>
       </section>
     );
