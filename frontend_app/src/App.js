@@ -224,13 +224,25 @@ function App() {
                   })}
 
                   {/* More dropdown */}
-                  <li className="relative">
+                  <li
+                    className="relative"
+                    onMouseEnter={() => {
+                      // Hover opens (desktop)
+                      setMoreOpen(true);
+                      computeMenuPosition();
+                    }}
+                    onMouseLeave={(e) => {
+                      // Close when pointer leaves trigger+menu region
+                      setMoreOpen(false);
+                    }}
+                  >
                     <button
                       ref={moreBtnRef}
                       aria-haspopup="true"
                       aria-expanded={moreOpen}
                       aria-controls="more-menu"
                       onClick={() => {
+                        // Mobile/touch toggle behavior
                         setMoreOpen((v) => {
                           const next = !v;
                           if (next) {
@@ -238,6 +250,18 @@ function App() {
                           }
                           return next;
                         });
+                      }}
+                      onFocus={() => {
+                        // Focus opens; keeps keyboard accessibility
+                        setMoreOpen(true);
+                        computeMenuPosition();
+                      }}
+                      onBlur={(e) => {
+                        // If focus leaves both trigger and menu, close
+                        const related = e.relatedTarget;
+                        const insideTrigger = moreBtnRef.current?.contains(related);
+                        const insideMenu = menuRef.current?.contains(related);
+                        if (!insideTrigger && !insideMenu) setMoreOpen(false);
                       }}
                       onKeyDown={(e) => {
                         // Open with Enter/Space/ArrowDown and focus first item
@@ -252,13 +276,38 @@ function App() {
                             );
                             first?.focus();
                           }, 0);
+                        } else if (e.key === "Escape") {
+                          // ESC closes and return focus to trigger
+                          e.stopPropagation();
+                          setMoreOpen(false);
+                          requestAnimationFrame(() => moreBtnRef.current?.focus());
                         }
                       }}
-                      className={`px-3 sm:px-4 md:px-5 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
+                      className={`inline-flex items-center gap-1.5 px-3 sm:px-4 md:px-5 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
                         moreOpen ? "bg-white text-[var(--color-text)] shadow" : "text-white/90 hover:bg-white/10"
                       }`}
                     >
                       <span style={{ textTransform: "uppercase" }}>More</span>
+                      {/* Down-arrow icon */}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        className={`transition-transform duration-150 ease-out ${
+                          moreOpen ? "rotate-180" : "rotate-0"
+                        }`}
+                      >
+                        <path
+                          d="M6 9l6 6 6-6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                       <span className="sr-only">, additional components</span>
                     </button>
 
@@ -272,13 +321,20 @@ function App() {
                             inset: 0,
                             zIndex: 1000, // above navbar and content
                           }}
+                          // Outside click closes
+                          onMouseDown={(e) => {
+                            const inMenu = menuRef.current?.contains(e.target);
+                            const inButton = moreBtnRef.current?.contains(e.target);
+                            if (!inMenu && !inButton) {
+                              setMoreOpen(false);
+                            }
+                          }}
                         >
                           {/* Click-catcher backdrop for outside clicks (invisible) */}
                           <div
                             style={{
                               position: "fixed",
                               inset: 0,
-                              // transparent but ensures click capture
                               background: "transparent",
                             }}
                           />
@@ -288,7 +344,18 @@ function App() {
                             id="more-menu"
                             role="menu"
                             aria-label="More components"
-                            onKeyDown={onMenuKeyDown}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") {
+                                e.stopPropagation();
+                                setMoreOpen(false);
+                                requestAnimationFrame(() =>
+                                  moreBtnRef.current?.focus()
+                                );
+                              } else {
+                                onMenuKeyDown(e);
+                              }
+                            }}
+                            tabIndex={-1}
                             className="rounded-xl border border-white/20 shadow-lg focus:outline-none"
                             style={{
                               position: "fixed",
@@ -302,6 +369,18 @@ function App() {
                               backdropFilter: "saturate(130%) blur(6px)",
                               zIndex: 1001,
                             }}
+                            onFocusOut={(e) => {
+                              // Close when focus leaves trigger+menu region
+                              const related = e.relatedTarget;
+                              const inTrigger = moreBtnRef.current?.contains(related);
+                              const inMenu = menuRef.current?.contains(related);
+                              if (!inTrigger && !inMenu) setMoreOpen(false);
+                            }}
+                            onMouseLeave={() => {
+                              // Pointer moving out of menu (and li wrapper's onMouseLeave handles region exit)
+                              // Ensure it closes in case pointer leaves from panel side.
+                              setMoreOpen(false);
+                            }}
                           >
                             <ul className="py-2 px-1 sm:px-2">
                               {moreItems.map((it) => {
@@ -311,6 +390,23 @@ function App() {
                                     <button
                                       role="menuitem"
                                       onClick={() => selectAndClose(it.key)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          selectAndClose(it.key);
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        // If focus leaves menu entirely, close
+                                        const related = e.relatedTarget;
+                                        const inMenu =
+                                          menuRef.current?.contains(related);
+                                        const inTrigger =
+                                          moreBtnRef.current?.contains(related);
+                                        if (!inMenu && !inTrigger) {
+                                          setMoreOpen(false);
+                                        }
+                                      }}
                                       className={`w-full text-left px-3 py-2 text-sm rounded-lg mx-2 my-1 transition-transform focus-ring ${
                                         isActive
                                           ? "bg-white text-[var(--color-text)] shadow"
