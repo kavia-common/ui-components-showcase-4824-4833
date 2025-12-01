@@ -303,51 +303,69 @@ export default function BentoGrid() {
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}
         >
-          {/* Keep current unified header size and gradient */}
-          <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="Know More" className="mb-1.5" />
-          {/* Body: hero + 3 small subgrid items; responsive and balanced */}
+          {/* Keep unified header gradient and sizing */}
+          <Header
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            actionLabel="Know More"
+            className="mb-1.5"
+          />
+
+          {/* Body layout: left hero + exactly 3 compact subgrid items on the right */}
           <div className="grid grid-cols-12 gap-1.5 sm:gap-2">
-            {/* Left hero media */}
+            {/* Left hero media: maintain aspect and subtle border */}
             <InteractiveHover
               as="a"
               href="#"
               title="Open announcement hero"
               ariaLabel="Open announcement hero"
               className="col-span-12 md:col-span-7 xl:col-span-7 rounded-lg overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
-              style={{ aspectRatio: "16 / 9", minHeight: "90px", maxHeight: "140px" }}
+              style={{
+                aspectRatio: "16 / 9",
+                minHeight: "90px",
+                maxHeight: "140px",
+              }}
             >
               <div className="w-full h-full bg-gray-100" aria-hidden="true" />
             </InteractiveHover>
 
-            {/* Right subgrid of 3 items */}
+            {/* Right: exactly three compact items with consistent 1px border and tight padding */}
             <div className="col-span-12 md:col-span-5 xl:col-span-5">
-              <div className="grid grid-cols-3 sm:grid-cols-3 gap-1.5 sm:gap-2">
-                {[
-                  { key: "a", ar: "1 / 1" },
-                  { key: "b", ar: "1 / 1" },
-                  { key: "c", ar: "1 / 1" },
-                ].map((it, idx) => (
+              {/* Ensure always 3 items; compact size via tighter min-height and constrained aspect */}
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                {["a", "b", "c"].map((key, idx) => (
                   <InteractiveHover
-                    key={it.key}
+                    key={key}
                     as="a"
                     href="#"
                     title={`Open announcement ${idx + 1}`}
                     ariaLabel={`Open announcement ${idx + 1}`}
                     className="rounded-md overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
                     style={{
-                      aspectRatio: it.ar,
-                      minHeight: "64px",
-                      maxHeight: "100px",
+                      // Slightly rectangular to appear compact in both width and height
+                      aspectRatio: "5 / 6",
+                      // Tighter vertical footprint
+                      minHeight: "56px",
+                      maxHeight: "88px",
+                      // Avoid layout shift by keeping a stable box model
+                      padding: "0",
                     }}
                   >
-                    <div className="w-full h-full bg-gray-100" aria-hidden="true" />
+                    <div
+                      className="w-full h-full bg-gray-100"
+                      aria-hidden="true"
+                      style={{
+                        // Ensure internal media respects compactness
+                        objectFit: "cover",
+                      }}
+                    />
                   </InteractiveHover>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Caption remains */}
+          {/* Caption remains; spacing balanced */}
           <p className="mt-1 text-[12px] sm:text-[13px] text-slate-700 line-clamp-1">
             Highlights from across the organization this week.
           </p>
