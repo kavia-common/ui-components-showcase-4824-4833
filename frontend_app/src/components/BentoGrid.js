@@ -4,14 +4,14 @@ import React from "react";
  * PUBLIC_INTERFACE
  * BentoGrid
  * Responsive 12/8/6/1 column bento grid aligned to the Ocean Professional theme.
- * Visual-only refactor: replaced hardcoded colors with Tailwind tokens (primary/secondary/text/background),
- * unified rounded corners, shadows, focus/hover rings, and refined typography.
- * No layout or behavioral changes.
+ * This update aligns all tile headers to assets/bento_grid_header_design_notes.md
+ * (height 48px, padding 12/16, icon/title layout, typography, corner radii,
+ * hover/focus states), keeping the previously requested full-width header gradient
+ * treatment. Body content and tile spans remain unchanged.
  */
 export default function BentoGrid() {
   /**
-   * Tile map updated: removed Clubs, Events, and News.
-   * Spans are kept to maintain a clean flow across xl/lg/md/sm without gaps.
+   * Tile map unchanged; layout/spans and bodies must remain intact.
    */
   const tiles = [
     // Row A
@@ -31,57 +31,113 @@ export default function BentoGrid() {
   ];
 
   // Shared, theme-aligned styles
-  const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60";
+  const focusRing =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#A855F7]/40";
   const cardBase =
     `rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 ${focusRing}`;
   const cardPlain = `bg-surface ${cardBase}`;
-  const cardTinted = `${cardBase} bg-blue-50`; // Ocean tinted surface using Tailwind
+  const cardTinted = `${cardBase} bg-blue-50`; // tinted body
 
-  // Header gradient token (applied to all header areas)
-  const headerGradient = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+  // Header gradient: keep previously requested full-width gradient; add radial glint per notes.
+  const baseHeaderGradient = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+  const headerGradientWithGlint =
+    `radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%), ${baseHeaderGradient}`;
 
-  // Reusable header block with gradient background spanning 100% width/height.
-  // Ensures accessible contrast by forcing white text/icons inside header area.
-  const HeaderBar = ({ id, title, right, className = "", dense = false }) => (
-    <div
-      className={`rounded-xl ${className}`}
+  // PUBLIC_INTERFACE
+  // Header icon glyph - simple 3-dot menu style fallback glyph
+  const HeaderIcon = ({ ariaHidden = true }) => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden={ariaHidden}
+      xmlns="http://www.w3.org/2000/svg"
+      className="pointer-events-none"
+    >
+      <circle cx="5" cy="12" r="2" fill="currentColor" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="19" cy="12" r="2" fill="currentColor" />
+    </svg>
+  );
+
+  // PUBLIC_INTERFACE
+  // Header chip used optionally on some tiles; auto-hides on very narrow widths
+  const HeaderChip = ({ children }) => (
+    <span
+      className="ml-auto hidden xs:inline-flex items-center h-5 px-2 rounded-full text-[12px] font-semibold text-white border border-white/30"
       style={{
-        // Full header area gradient background
-        background: headerGradient,
+        background: "rgba(255,255,255,0.24)",
+        backdropFilter: "saturate(140%) blur(4px)",
       }}
     >
-      {/* Use an inner wrapper to guarantee padding is inside the gradient area
-          so no clipped/partial strips appear. */}
-      <div className={dense ? "px-3 py-1.5" : "px-3 py-2"}>
-        <div className="flex items-center justify-between">
+      {children}
+    </span>
+  );
+
+  // PUBLIC_INTERFACE
+  // Unified header bar implementing assets/bento_grid_header_design_notes.md
+  const HeaderBar = ({ id, title, right = null, className = "", showChip = false }) => (
+    <div
+      className={["overflow-hidden", className].join(" ")}
+      style={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+    >
+      <div
+        className="w-full"
+        style={{
+          background: headerGradientWithGlint,
+        }}
+      >
+        <div
+          className={[
+            // 48px header height target using padding and min-h
+            "min-h-[48px]",
+            "flex items-center gap-2 md:gap-2.5",
+            // Responsive padding per notes (default 16px; compact to 12px on very narrow)
+            "px-4 py-3",
+            "text-white",
+          ].join(" ")}
+        >
+          {/* Icon container 24x24 circle with translucent white bg */}
+          <span
+            className="inline-flex items-center justify-center rounded-full"
+            style={{
+              width: 24,
+              height: 24,
+              background: "rgba(255,255,255,0.22)",
+              color: "#ffffff",
+              flex: "0 0 auto",
+            }}
+            aria-hidden="true"
+          >
+            <HeaderIcon />
+          </span>
+
+          {/* Title: bold 14px/20px, truncates to one line */}
           <h3
             id={id}
-            className="text-white text-[16px] md:text-[17px] font-semibold leading-6"
+            className="font-bold text-[14px] leading-5 whitespace-nowrap overflow-hidden text-ellipsis"
           >
             {title}
           </h3>
-          {/* Force header actions to use high-contrast white text by default.
-              Buttons/links inside can still override on hover but start white. */}
-          <div className="flex items-center *:text-white *:hover:text-[var(--color-text)]">
-            {right}
-          </div>
+
+          {/* Optional small chip next to title for some tiles */}
+          {showChip && <HeaderChip>Featured</HeaderChip>}
+
+          {/* Right actions (e.g., small button) align to far right */}
+          <div className="ml-auto flex items-center">{right}</div>
         </div>
       </div>
     </div>
   );
 
-  const titleClass = "text-[16px] md:text-[17px] font-semibold text-text"; // kept for non-header titles when needed
   const pillLinkBase =
     "inline-flex items-center h-8 px-3 rounded-full text-[12px] font-medium transition focus-ring";
-  const pillWhiteOutline =
-    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // for gradient cards
   const pillOnGradientHeader =
-    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // buttons inside gradient headers (kept)
-  const pillOnPlain =
-    "bg-blue-50 text-primary hover:bg-primary hover:text-white"; // unchanged for body areas on plain cards
+    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]";
 
   // PUBLIC_INTERFACE
-  // Render a tile by variant (visual refactor only)
+  // Render a tile by variant (only headers updated; bodies unchanged)
   const Tile = ({ t }) => {
     if (t.variant === "gradient-hero") {
       return (
@@ -97,8 +153,9 @@ export default function BentoGrid() {
           <HeaderBar
             id={`tile-${t.key}-title`}
             title={t.title}
-            right={<button className={`${pillLinkBase} ${pillWhiteOutline}`}>Know More</button>}
+            right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
             className="mb-3"
+            showChip
           />
 
           <div className="mt-3 text-sm text-white/90 max-w-[48ch]">
@@ -216,11 +273,9 @@ export default function BentoGrid() {
               </a>
             }
             className="mb-2"
-            dense
           />
-          {/* Reduced body height while keeping header unchanged */}
+          {/* Body unchanged */}
           <div className="grid grid-cols-12 gap-2">
-            {/* Main media uses even shorter aspect to constrain height */}
             <div
               className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/8] sm:aspect-[16/8] md:aspect-[16/8]"
               aria-hidden="true"
@@ -231,7 +286,6 @@ export default function BentoGrid() {
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/10]" aria-hidden="true" />
             </div>
           </div>
-          {/* Tighten spacing and clamp caption to avoid extra height */}
           <p className="mt-1 text-[13px] md:text-sm text-slate-600 line-clamp-1">
             Highlights from across the organization this week.
           </p>
