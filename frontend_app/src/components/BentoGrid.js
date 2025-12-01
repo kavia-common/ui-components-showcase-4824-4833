@@ -15,28 +15,26 @@ export default function BentoGrid() {
    * - A1 Hero (gradient), A2 Meetings
    * - B1 Announcements, B2 CEO, B3 L&D
    * - C1 Toolshelf, C2 Division, C3 Latest Update, C4 CSR
-   * - Section label: Employee Connect
    * - E row: Clubs, Events, News
    * - Note: Removed Birthdays, Work Anniversaries, and Recognitions per request.
+   * - Also removed the "Employee Connect" section label per current task.
    */
   const tiles = [
-    { key: "hero", title: "Dixon’s Value Proposition (EVP)", variant: "gradient-hero", spans: "col-span-12 lg:col-span-8", minH: "min-h-[170px]" },
-    { key: "meetings", title: "Meetings", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
+    { key: "hero", title: "Dixon’s Value Proposition (EVP)", variant: "gradient-hero", spans: "col-span-12 xl:col-span-8", minH: "min-h-[170px]" },
+    { key: "meetings", title: "Meetings", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
 
-    { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 lg:col-span-6", minH: "min-h-[180px]" },
-    { key: "ceo", title: "Insights from CEO", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[180px]" },
-    { key: "ld", title: "L&D Insights", variant: "gradient-ld", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[180px]" },
+    { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 xl:col-span-6", minH: "min-h-[180px]" },
+    { key: "ceo", title: "Insights from CEO", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
+    { key: "ld", title: "L&D Insights", variant: "gradient-ld", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
 
-    { key: "tools", title: "Toolshelf", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
-    { key: "division", title: "Division", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
-    { key: "latest", title: "Latest Update", variant: "tinted-blue", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
-    { key: "csr", title: "CSR@TDI", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
+    { key: "tools", title: "Toolshelf", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
+    { key: "division", title: "Division", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
+    { key: "latest", title: "Latest Update", variant: "tinted-blue", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
+    { key: "csr", title: "CSR@TDI", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
 
-    { key: "section", title: "Employee Connect", variant: "label", spans: "col-span-12" },
-
-    { key: "clubs", title: "Clubs", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
-    { key: "events", title: "Events", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
-    { key: "news", title: "News", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
+    { key: "clubs", title: "Clubs", variant: "plain", spans: "col-span-12 md:col-span-6 xl:col-span-4", minH: "min-h-[170px]" },
+    { key: "events", title: "Events", variant: "plain", spans: "col-span-12 md:col-span-6 xl:col-span-4", minH: "min-h-[170px]" },
+    { key: "news", title: "News", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
   ];
 
   // Shared styles
@@ -52,14 +50,6 @@ export default function BentoGrid() {
   // PUBLIC_INTERFACE
   // Render a tile by variant
   const Tile = ({ t }) => {
-    if (t.variant === "label") {
-      return (
-        <h2 className={`${t.spans} text-[20px] font-bold text-slate-900 mt-1`} role="heading" aria-level={2}>
-          {t.title}
-        </h2>
-      );
-    }
-
     if (t.variant === "gradient-hero") {
       return (
         <section
