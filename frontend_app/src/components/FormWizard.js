@@ -77,17 +77,44 @@ export default function FormWizard() {
     return Object.keys(e).length === 0;
   };
 
+  /**
+   * Compute per-step "lightweight" validity used to drive visuals (progress bar, stepper chips)
+   * without running full validateStep() on every keystroke.
+   * This avoids over-eager validations during onChange and keeps typing smooth.
+   */
+  const step1Valid = useMemo(() => {
+    const u = data.username;
+    const p = data.password;
+    const c = data.confirm;
+    if (!u || !u.trim()) return false;
+    if (!p || p.length < 8) return false;
+    if (c !== p) return false;
+    return true;
+  }, [data.username, data.password, data.confirm]);
+
+  const step2Valid = useMemo(() => {
+    const f = data.firstName;
+    const l = data.lastName;
+    const e = data.email;
+    if (!f || !f.trim()) return false;
+    if (!l || !l.trim()) return false;
+    // Only run regex if email has a plausible shape to reduce work during typing
+    if (!e) return false;
+    return isValidEmail(e);
+  }, [data.firstName, data.lastName, data.email]);
+
+  const step3Valid = useMemo(() => {
+    const t = data.topic;
+    const d = data.delivery;
+    if (!t) return false;
+    if (!["daily", "weekly", "monthly"].includes(d)) return false;
+    return true;
+  }, [data.topic, data.delivery]);
+
   const percentComplete = useMemo(() => {
-    // Count completed among steps 1..3
-    let completed = 0;
-    for (let i = 1; i <= 3; i++) {
-      if (validateStep(i, false)) completed++;
-    }
-    // If on review and everything valid, consider 3 of 3 complete.
-    if (step === 4) completed = 3;
+    const completed = (step1Valid ? 1 : 0) + (step2Valid ? 1 : 0) + (step3Valid ? 1 : 0);
     return Math.round((completed / 3) * 100);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, step]);
+  }, [step1Valid, step2Valid, step3Valid]);
 
   // Step navigation: only allow jumping backwards freely; jumping forward requires prior steps valid
   const goToStep = (target) => {
@@ -147,7 +174,11 @@ export default function FormWizard() {
       <div className="flex items-center justify-between gap-2">
         {steps.map((s) => {
           const isActive = step === s.key;
-          const isComplete = s.key < step || (s.key < 4 && validateStep(s.key, false));
+          const isComplete =
+            s.key < step ||
+            (s.key === 1 && step1Valid) ||
+            (s.key === 2 && step2Valid) ||
+            (s.key === 3 && step3Valid);
           return (
             <button
               key={s.key}
@@ -522,22 +553,11 @@ export default function FormWizard() {
 
   // Only enable Next if current step valid
   function canProceed() {
-    // Perform a dry-run validation without persisting errors to avoid noisy UI during typing
-    const curr = step;
-    const e = {};
-    if (curr === 1) {
-      if (!data.username.trim()) e.username = true;
-      if (data.password.length < 8) e.password = true;
-      if (data.confirm !== data.password) e.confirm = true;
-    } else if (curr === 2) {
-      if (!data.firstName.trim()) e.firstName = true;
-      if (!data.lastName.trim()) e.lastName = true;
-      if (!isValidEmail(data.email)) e.email = true;
-    } else if (curr === 3) {
-      if (!data.topic) e.topic = true;
-      if (!["daily", "weekly", "monthly"].includes(data.delivery)) e.delivery = true;
-    }
-    return Object.keys(e).length === 0;
+    // Use memoized lightweight validity to avoid heavy checks per render
+    if (step === 1) return step1Valid;
+    if (step === 2) return step2Valid;
+    if (step === 3) return step3Valid;
+    return true;
   }
 
   return (
