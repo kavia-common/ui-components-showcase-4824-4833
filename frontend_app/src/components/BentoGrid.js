@@ -342,11 +342,13 @@ export default function BentoGrid() {
                     ariaLabel={`Open announcement ${idx + 1}`}
                     className="rounded-md overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
                     style={{
-                      // Slightly rectangular to appear compact in both width and height
+                      // Increased, consistent compact height without layout shift
+                      // Keep a stable aspect ratio but allow a taller box on small and larger screens
                       aspectRatio: "5 / 6",
-                      // Tighter vertical footprint
-                      minHeight: "56px",
-                      maxHeight: "88px",
+                      // Slightly increased min height for better touch target and visual balance
+                      minHeight: "68px",
+                      // Cap height to avoid overpowering the hero media
+                      maxHeight: "104px",
                       // Avoid layout shift by keeping a stable box model
                       padding: "0",
                     }}
