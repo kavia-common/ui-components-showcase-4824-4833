@@ -3,21 +3,14 @@ import React from "react";
 /**
  * PUBLIC_INTERFACE
  * BentoGrid
- * Responsive 12/8/6/1 column bento grid with Ocean Professional styling.
- * Matches layout and behavior from assets/bento_grid_design_notes.md and style_guide.md:
- * - Cards use rounded corners, soft shadows, and pill CTAs.
- * - Desktop: 12 columns; Tablet: 8; Small tablet: 6; Mobile: 1.
- * - Uniform internal padding and typography.
+ * Responsive 12/8/6/1 column bento grid aligned to the Ocean Professional theme.
+ * Visual-only refactor: replaced hardcoded colors with Tailwind tokens (primary/secondary/text/background),
+ * unified rounded corners, shadows, focus/hover rings, and refined typography.
+ * No layout or behavioral changes.
  */
 export default function BentoGrid() {
   /**
-   * The tile map approximates the screenshot:
-   * - A1 Hero (gradient), A2 Meetings
-   * - B1 Announcements, B2 CEO, B3 L&D
-   * - C1 Toolshelf, C2 Division, C3 Latest Update, C4 CSR
-   * - E row: Clubs, Events, News
-   * - Note: Removed Birthdays, Work Anniversaries, and Recognitions per request.
-   * - Also removed the "Employee Connect" section label per current task.
+   * Tile map preserved. Variants indicate visual styling only.
    */
   const tiles = [
     { key: "hero", title: "Dixon’s Value Proposition (EVP)", variant: "gradient-hero", spans: "col-span-12 xl:col-span-8", minH: "min-h-[170px]" },
@@ -37,18 +30,23 @@ export default function BentoGrid() {
     { key: "news", title: "News", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
   ];
 
-  // Shared styles
+  // Shared, theme-aligned styles
+  // - Rounded corners consistent: rounded-2xl
+  // - Shadows subtle: shadow-soft, hover:shadow-xl with slight lift
+  // - Focus ring uses primary (blue)
+  const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60";
   const cardBase =
-    "rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50";
-  const cardPlain = `bg-white ${cardBase}`;
-  const cardTinted = `${cardBase} bg-[#EAF2FF]`;
+    `rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 ${focusRing}`;
+  const cardPlain = `bg-surface ${cardBase}`;
+  const cardTinted = `${cardBase} bg-blue-50`; // Ocean tinted surface using Tailwind
+
   const headerClass = "flex items-center justify-between";
-  const titleClass = "text-[16px] md:text-[17px] font-semibold text-slate-900";
+  const titleClass = "text-[16px] md:text-[17px] font-semibold text-text";
   const pillLink =
-    "inline-flex items-center h-8 px-3 rounded-full text-[12px] font-medium bg-[var(--chip-bg,#EEF3FF)] text-[var(--brand-primary-600,#7C3AED)] hover:bg-[var(--brand-primary-600,#7C3AED)] hover:text-white transition focus-ring";
+    "inline-flex items-center h-8 px-3 rounded-full text-[12px] font-medium bg-blue-50 text-primary hover:bg-primary hover:text-white transition focus-ring";
 
   // PUBLIC_INTERFACE
-  // Render a tile by variant
+  // Render a tile by variant (visual refactor only)
   const Tile = ({ t }) => {
     if (t.variant === "gradient-hero") {
       return (
@@ -56,13 +54,19 @@ export default function BentoGrid() {
           role="region"
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} text-white ${cardBase} p-6 relative overflow-hidden`}
-          style={{ background: "var(--tile-hero-gradient, linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%))" }}
+          // Ocean gradient: from-blue-500/10 to-gray-50 layered on brand purple retained as decorative richness
+          style={{
+            background:
+              "var(--tile-hero-gradient, linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%))",
+          }}
         >
           <div className={headerClass}>
             <h3 id={`tile-${t.key}-title`} className="text-[18px] font-semibold leading-6">
               {t.title}
             </h3>
-            <button className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/15 hover:bg-white hover:text-[var(--brand-primary,#6D28D9)] transition">
+            <button
+              className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/15 hover:bg-white hover:text-primary transition"
+            >
               Know More
             </button>
           </div>
@@ -79,11 +83,11 @@ export default function BentoGrid() {
             ))}
           </div>
 
-          {/* Decorative right bubbles */}
+          {/* Decorative right bubbles aligned with theme */}
           <div className="pointer-events-none absolute right-4 top-4 hidden md:flex gap-2 opacity-25">
             <span className="h-6 w-6 rounded-full bg-white/60" />
-            <span className="h-6 w-6 rounded-full bg-yellow-300/80" />
-            <span className="h-6 w-6 rounded-full bg-pink-300/80" />
+            <span className="h-6 w-6 rounded-full bg-secondary/80" />
+            <span className="h-6 w-6 rounded-full bg-blue-300/80" />
           </div>
         </section>
       );
@@ -95,13 +99,16 @@ export default function BentoGrid() {
           role="region"
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} text-white ${cardBase} p-4 relative overflow-hidden`}
-          style={{ background: "var(--tile-ld-gradient, linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%))" }}
+          style={{
+            background:
+              "var(--tile-ld-gradient, linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%))",
+          }}
         >
           <div className={headerClass}>
             <h3 id={`tile-${t.key}-title`} className="text-[16px] font-semibold leading-6">
               {t.title}
             </h3>
-            <button className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/10 hover:bg-white hover:text-[var(--brand-primary,#6D28D9)] transition">
+            <button className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/10 hover:bg-white hover:text-primary transition">
               Know More
             </button>
           </div>
@@ -124,7 +131,7 @@ export default function BentoGrid() {
           </div>
           <div className="mt-3 flex items-center gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-9 w-9 rounded-xl bg-white shadow-sm" aria-hidden="true" />
+              <div key={i} className="h-9 w-9 rounded-xl bg-surface shadow-sm" aria-hidden="true" />
             ))}
           </div>
           <ul className="mt-3 list-disc list-inside text-sm text-slate-700 space-y-1.5">
@@ -150,7 +157,7 @@ export default function BentoGrid() {
           </div>
           <div className="mt-4 grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-10 rounded-lg bg-indigo-100/80" aria-hidden="true" />
+              <div key={i} className="h-10 rounded-lg bg-blue-100" aria-hidden="true" />
             ))}
           </div>
         </section>
@@ -169,11 +176,11 @@ export default function BentoGrid() {
             </a>
           </div>
           <div className="mt-3 grid grid-cols-12 gap-3">
-            <div className="col-span-8 rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
+            <div className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
             <div className="col-span-4 grid grid-rows-3 gap-2">
-              <div className="rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
-              <div className="rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
-              <div className="rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
             </div>
           </div>
           <p className="mt-2 text-sm text-slate-600">Highlights from across the organization this week.</p>
@@ -187,7 +194,7 @@ export default function BentoGrid() {
           <div className="flex items-start gap-3">
             <img
               alt=""
-              src="https://dummyimage.com/56x56/94a3b8/ffffff&text=CEO"
+              src="https://dummyimage.com/56x56/e5e7eb/111827&text=CEO"
               className="h-14 w-14 rounded-full object-cover"
             />
             <div className="min-w-0">
@@ -197,7 +204,7 @@ export default function BentoGrid() {
               <p className="mt-1 text-sm text-slate-700 line-clamp-3">
                 A short update from leadership on the current quarter and what to expect next.
               </p>
-              <button className="mt-2 rounded-full bg-[var(--brand-primary-600,#7C3AED)] px-4 h-9 text-sm font-semibold text-white hover:brightness-110 focus-ring">
+              <button className="mt-2 rounded-full bg-primary px-4 h-9 text-sm font-semibold text-white hover:brightness-110 focus-ring">
                 Read
               </button>
             </div>
@@ -217,7 +224,7 @@ export default function BentoGrid() {
               Manage
             </a>
           </div>
-          <div className="mt-3 min-h-[90px] rounded-lg border border-slate-200/60" aria-hidden="true" />
+          <div className="mt-3 min-h-[90px] rounded-lg border border-gray-200" aria-hidden="true" />
         </section>
       );
     }
@@ -232,7 +239,7 @@ export default function BentoGrid() {
             {["Division 2025 Edition 1", "Division 2025 Edition 2", "Division 2025 Edition 3"].map((label) => (
               <button
                 key={label}
-                className="w-full h-10 rounded-full text-[var(--brand-primary-600,#7C3AED)] bg-[var(--info-50,#EEF2FF)] hover:bg-[var(--brand-primary-600,#7C3AED)] hover:text-white transition focus-ring"
+                className="w-full h-10 rounded-full text-primary bg-blue-50 hover:bg-primary hover:text-white transition focus-ring"
               >
                 {label}
               </button>
@@ -250,7 +257,7 @@ export default function BentoGrid() {
           </h3>
           <div className="mt-3 grid grid-cols-2 gap-3 items-center justify-items-center">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-10 w-20 bg-slate-100 rounded-md" aria-hidden="true" />
+              <div key={i} className="h-10 w-20 bg-gray-100 rounded-md" aria-hidden="true" />
             ))}
           </div>
         </section>
@@ -270,7 +277,7 @@ export default function BentoGrid() {
           </div>
           <div className="mt-3 grid grid-cols-5 gap-3">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-[11px] text-slate-500">
+              <div key={i} className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-[11px] text-slate-500">
                 C{i + 1}
               </div>
             ))}
@@ -290,7 +297,7 @@ export default function BentoGrid() {
               Know More
             </a>
           </div>
-          <div className="mt-3 w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-800 flex items-end p-3">
+          <div className="mt-3 w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-800 flex items-end p-3">
             <div className="text-white text-sm">Townhall • Dec 12</div>
           </div>
         </section>
@@ -310,8 +317,8 @@ export default function BentoGrid() {
           </div>
           <div className="mt-3 flex gap-3 overflow-x-auto snap-x snap-mandatory">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="min-w-[140px] snap-start rounded-lg bg-white shadow-sm overflow-hidden">
-                <div className="h-20 bg-slate-200" />
+              <div key={i} className="min-w-[140px] snap-start rounded-lg bg-surface shadow-sm overflow-hidden">
+                <div className="h-20 bg-gray-200" />
                 <div className="p-2 text-sm">Headline {i + 1}</div>
               </div>
             ))}
