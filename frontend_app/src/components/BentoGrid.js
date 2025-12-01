@@ -168,7 +168,7 @@ export default function BentoGrid() {
               <h3
                 id={id}
                 className="font-semibold text-[15px] leading-5 tracking-[0.01em] whitespace-nowrap overflow-hidden text-ellipsis"
-                style={{ color: "#FFFFFF" }}
+                style={{ color: "#FFFFFF", textTransform: "uppercase" }}
                 title={title}
               >
                 {title}
@@ -249,7 +249,7 @@ export default function BentoGrid() {
                   ariaLabel={text}
                   className="block rounded-md px-2 py-1.5 transition-colors duration-200 ease-out border border-gray-200"
                 >
-                  <span className="text-sm font-medium">{text}</span>
+                  <span className="text-sm font-medium" style={{ textTransform: "uppercase" }}>{text}</span>
                 </InteractiveHover>
               </li>
             ))}
@@ -300,7 +300,7 @@ export default function BentoGrid() {
                 ariaLabel="Read CEO update"
                 className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring transition-colors duration-200 ease-out"
               >
-                <span className="relative z-10">Read</span>
+                <span className="relative z-10" style={{ textTransform: "uppercase" }}>Read</span>
               </InteractiveHover>
             </div>
           </div>
@@ -336,7 +336,7 @@ export default function BentoGrid() {
                 ariaLabel={label}
                 className="w-full h-10 rounded-full transition-colors duration-200 ease-out border border-gray-200"
               >
-                <span className="relative z-10 font-medium">{label}</span>
+                <span className="relative z-10 font-medium" style={{ textTransform: "uppercase" }}>{label}</span>
               </InteractiveHover>
             ))}
           </div>
@@ -381,7 +381,7 @@ export default function BentoGrid() {
           ariaLabel="Open content"
           className="mt-2 block rounded-md px-3 py-2 transition-colors duration-200 ease-out border border-gray-200"
         >
-          <p className="text-sm">Content</p>
+          <p className="text-sm" style={{ textTransform: "uppercase" }}>Content</p>
         </InteractiveHover>
       </section>
     );

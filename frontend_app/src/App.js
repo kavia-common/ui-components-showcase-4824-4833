@@ -96,7 +96,7 @@ function App() {
                             }`}
                           aria-current={isActive ? "page" : undefined}
                         >
-                          {it.label}
+                          <span style={{ textTransform: "uppercase" }}>{it.label}</span>
                         </button>
                       </li>
                     );
@@ -168,7 +168,7 @@ function App() {
                                 }`}
                               aria-current={isActive ? "page" : undefined}
                             >
-                              {it.label}
+                              <span style={{ textTransform: "uppercase" }}>{it.label}</span>
                             </button>
                           </li>
                         );

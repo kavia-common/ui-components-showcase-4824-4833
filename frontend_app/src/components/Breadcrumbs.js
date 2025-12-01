@@ -98,7 +98,7 @@ export default function Breadcrumbs() {
           onBlur={(e) => (e.currentTarget.dataset.underline = "off")}
           data-underline="off"
         >
-          {label}
+          <span style={{ textTransform: "uppercase" }}>{label}</span>
           {/* Gradient underline pseudo-element via inline style object on a span wrapper */}
           <span
             aria-hidden="true"
@@ -135,7 +135,7 @@ export default function Breadcrumbs() {
 
     return (
       <span aria-current="page" className={currentClasses} style={currentStyle}>
-        {label}
+        <span style={{ textTransform: "uppercase" }}>{label}</span>
       </span>
     );
   }

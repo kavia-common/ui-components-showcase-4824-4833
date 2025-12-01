@@ -28,7 +28,7 @@ export default function Carousel() {
           {slides.map((s, i) => (
             <div key={i} className={`inline-block w-full align-top ${s.color} h-40 md:h-56 rounded-lg`}>
               <div className="h-full w-full flex items-center justify-center">
-                <span className="text-lg font-semibold">{s.title}</span>
+                <span className="text-lg font-semibold" style={{ textTransform: "uppercase" }}>{s.title}</span>
               </div>
             </div>
           ))}

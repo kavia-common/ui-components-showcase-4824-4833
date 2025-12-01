@@ -178,7 +178,7 @@ export default function Accordion() {
                 ].join(" ")}
               >
                 {/* Question text stays left, no color change on hover */}
-                <span className="flex-1 text-left">{it.q}</span>
+                <span className="flex-1 text-left" style={{ textTransform: "uppercase" }}>{it.q}</span>
 
                 {/* Chevron container: gradient ring + neutral interior, 28px chip, 16px icon */}
                 <span

@@ -57,7 +57,7 @@ export default function Hero() {
               lineHeight: "18px",
             }}
           >
-            <span>HERO SECTION</span>
+            <span style={{ textTransform: "uppercase" }}>HERO SECTION</span>
           </div>
 
           {/* Headline with slightly smaller sizes and tighter leading */}
@@ -71,7 +71,7 @@ export default function Hero() {
               letterSpacing: "-0.02em",
             }}
           >
-            UI Components
+            <span style={{ textTransform: "uppercase" }}>UI Components</span>
             <br />
             <span
               className="bg-clip-text text-transparent"
@@ -82,7 +82,7 @@ export default function Hero() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Showcase
+              <span style={{ textTransform: "uppercase" }}>Showcase</span>
             </span>
           </h1>
 

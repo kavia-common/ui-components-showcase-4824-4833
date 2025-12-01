@@ -53,7 +53,7 @@ export default function ChatbotStub() {
           onChange={(e) => setInput(e.target.value)}
         />
         <button className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring" type="submit">
-          Send
+          <span style={{ textTransform: "uppercase" }}>Send</span>
         </button>
       </form>
     </div>

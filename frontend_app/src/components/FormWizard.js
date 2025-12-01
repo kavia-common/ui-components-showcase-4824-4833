@@ -45,7 +45,7 @@ export default function FormWizard() {
       {step === 1 && (
         <div className="space-y-3">
           <div>
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium" style={{ textTransform: "uppercase" }}>Name</label>
             <input
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
               value={data.name}
@@ -54,7 +54,7 @@ export default function FormWizard() {
             {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
           </div>
           <div>
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium" style={{ textTransform: "uppercase" }}>Email</label>
             <input
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
               value={data.email}
@@ -68,16 +68,16 @@ export default function FormWizard() {
 
       {step === 2 && (
         <div className="space-y-3">
-          <label className="text-sm font-medium">Choose Plan</label>
+          <label className="text-sm font-medium" style={{ textTransform: "uppercase" }}>Choose Plan</label>
           <div className="grid grid-cols-3 gap-3">
             {["basic","pro","enterprise"].map((p) => (
               <button
                 type="button"
                 key={p}
                 onClick={() => setData({ ...data, plan: p })}
-                className={`rounded-lg border px-3 py-2 capitalize ${data.plan === p ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}
+                className={`rounded-lg border px-3 py-2 ${data.plan === p ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}
               >
-                {p}
+                <span style={{ textTransform: "uppercase" }}>{p}</span>
               </button>
             ))}
           </div>
@@ -88,7 +88,7 @@ export default function FormWizard() {
       {step === 3 && (
         <div className="space-y-3">
           <div className="rounded-lg border border-gray-200 p-3">
-            <p className="text-sm font-medium">Summary</p>
+            <p className="text-sm font-medium" style={{ textTransform: "uppercase" }}>Summary</p>
             <ul className="mt-2 text-sm text-gray-700">
               <li><strong>Name:</strong> {data.name}</li>
               <li><strong>Email:</strong> {data.email}</li>
@@ -97,18 +97,18 @@ export default function FormWizard() {
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={data.agree} onChange={(e) => setData({ ...data, agree: e.target.checked })} />
-            I agree to the terms.
+            <span style={{ textTransform: "uppercase" }}>I agree to the terms.</span>
           </label>
           {errors.agree && <p className="text-xs text-red-600">{errors.agree}</p>}
         </div>
       )}
 
       <div className="mt-4 flex justify-between">
-        <button className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring" onClick={prev} disabled={step === 1}>Back</button>
+        <button className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring" onClick={prev} disabled={step === 1}><span style={{ textTransform: "uppercase" }}>Back</span></button>
         {step < 3 ? (
-          <button className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={next}>Next</button>
+          <button className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={next}><span style={{ textTransform: "uppercase" }}>Next</span></button>
         ) : (
-          <button className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={validate}>Submit</button>
+          <button className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={validate}><span style={{ textTransform: "uppercase" }}>Submit</span></button>
         )}
       </div>
     </div>

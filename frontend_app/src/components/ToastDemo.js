@@ -11,13 +11,13 @@ export default function ToastDemo() {
   return (
     <div className="surface p-4 flex flex-wrap gap-3">
       <button className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={() => notify("Welcome! This is an info toast.", "info")}>
-        Info Toast
+        <span style={{ textTransform: "uppercase" }}>Info Toast</span>
       </button>
       <button className="rounded-lg bg-green-600 text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={() => notify("Saved successfully.", "success")}>
-        Success Toast
+        <span style={{ textTransform: "uppercase" }}>Success Toast</span>
       </button>
       <button className="rounded-lg bg-red-600 text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={() => notify("Something went wrong.", "error")}>
-        Error Toast
+        <span style={{ textTransform: "uppercase" }}>Error Toast</span>
       </button>
     </div>
   );
