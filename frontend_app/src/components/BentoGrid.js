@@ -27,7 +27,9 @@ export default function BentoGrid() {
 
   // Shared styles
   const focusRingCard = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#6B8CFF]/40";
-  const cardBase = `rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 ${focusRingCard}`;
+  // Ensure a default 1px light border on all tiles to prevent layout shift on hover
+  // Use a consistent neutral border color (gray-200)
+  const cardBase = `rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 border border-gray-200 ${focusRingCard}`;
   const cardPlain = `bg-surface ${cardBase}`;
   const cardTinted = `${cardBase} bg-blue-50`;
 
@@ -258,7 +260,7 @@ export default function BentoGrid() {
                   as="a"
                   href="#"
                   ariaLabel={text}
-                  className="block rounded-md px-2 py-1.5 transition-colors duration-200 ease-out"
+                  className="block rounded-md px-2 py-1.5 transition-colors duration-200 ease-out border border-gray-200"
                 >
                   <span className="text-sm font-medium">{text}</span>
                 </InteractiveHover>
@@ -373,7 +375,7 @@ export default function BentoGrid() {
                 as="button"
                 type="button"
                 ariaLabel={label}
-                className="w-full h-10 rounded-full transition-colors duration-200 ease-out"
+                className="w-full h-10 rounded-full transition-colors duration-200 ease-out border border-gray-200"
               >
                 <span className="relative z-10 font-medium">{label}</span>
               </InteractiveHover>
@@ -394,7 +396,7 @@ export default function BentoGrid() {
                 as="a"
                 href="#"
                 ariaLabel={`Open CSR item ${i + 1}`}
-                className="h-10 w-20 rounded-md transition-colors duration-200 ease-out"
+                className="h-10 w-20 rounded-md transition-colors duration-200 ease-out border border-gray-200"
               >
                 <div className="w-full h-full bg-gray-100 rounded-md" aria-hidden="true" />
               </InteractiveHover>
@@ -412,7 +414,7 @@ export default function BentoGrid() {
           as="a"
           href="#"
           ariaLabel="Open content"
-          className="mt-2 block rounded-md px-3 py-2 transition-colors duration-200 ease-out"
+          className="mt-2 block rounded-md px-3 py-2 transition-colors duration-200 ease-out border border-gray-200"
         >
           <p className="text-sm">Content</p>
         </InteractiveHover>
