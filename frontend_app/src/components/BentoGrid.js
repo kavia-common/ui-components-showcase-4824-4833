@@ -37,10 +37,33 @@ export default function BentoGrid() {
   const cardPlain = `bg-surface ${cardBase}`;
   const cardTinted = `${cardBase} bg-blue-50`; // Ocean tinted surface using Tailwind
 
-  const headerClass = "flex items-center justify-between";
-  const titleClass = "text-[16px] md:text-[17px] font-semibold text-text";
-  const pillLink =
-    "inline-flex items-center h-8 px-3 rounded-full text-[12px] font-medium bg-blue-50 text-primary hover:bg-primary hover:text-white transition focus-ring";
+  // Header gradient token (applied to all header areas)
+  const headerGradient = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+
+  // Reusable header block with gradient background and accessible text/icons
+  const HeaderBar = ({ id, title, right, className = "" }) => (
+    <div
+      className={`rounded-xl px-3 py-2 ${className}`}
+      style={{ background: headerGradient }}
+    >
+      <div className="flex items-center justify-between">
+        <h3 id={id} className="text-white text-[16px] md:text-[17px] font-semibold leading-6">
+          {title}
+        </h3>
+        <div className="flex items-center">{right}</div>
+      </div>
+    </div>
+  );
+
+  const titleClass = "text-[16px] md:text-[17px] font-semibold text-text"; // kept for non-header titles when needed
+  const pillLinkBase =
+    "inline-flex items-center h-8 px-3 rounded-full text-[12px] font-medium transition focus-ring";
+  const pillWhiteOutline =
+    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // for gradient cards
+  const pillOnGradientHeader =
+    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // buttons inside gradient headers
+  const pillOnPlain =
+    "bg-blue-50 text-primary hover:bg-primary hover:text-white"; // unchanged for body areas on plain cards
 
   // PUBLIC_INTERFACE
   // Render a tile by variant (visual refactor only)
@@ -56,16 +79,12 @@ export default function BentoGrid() {
               "var(--tile-hero-gradient, linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%))",
           }}
         >
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className="text-[18px] font-semibold leading-6">
-              {t.title}
-            </h3>
-            <button
-              className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/15 hover:bg-white hover:text-primary transition"
-            >
-              Know More
-            </button>
-          </div>
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={<button className={`${pillLinkBase} ${pillWhiteOutline}`}>Know More</button>}
+            className="mb-3"
+          />
 
           <div className="mt-3 text-sm text-white/90 max-w-[48ch]">
             Rewards, Recognition, Be Squad, Engagement Platform, Employee Wellness, You Matter
@@ -100,14 +119,12 @@ export default function BentoGrid() {
               "var(--tile-ld-gradient, linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%))",
           }}
         >
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className="text-[16px] font-semibold leading-6">
-              {t.title}
-            </h3>
-            <button className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/10 hover:bg-white hover:text-primary transition">
-              Know More
-            </button>
-          </div>
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
+            className="mb-2"
+          />
           <p className="mt-2 text-sm text-white/90">Upskill with curated learning content and programs.</p>
           <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-white/15" aria-hidden="true" />
         </section>
@@ -117,14 +134,16 @@ export default function BentoGrid() {
     if (t.variant === "tinted-blue") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardTinted} p-4`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="View All latest updates">
-              View All
-            </a>
-          </div>
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={
+              <a href="#" className={`${pillLinkBase} ${pillOnGradientHeader}`} aria-label="View All latest updates">
+                View All
+              </a>
+            }
+            className="mb-3"
+          />
           <div className="mt-3 flex items-center gap-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-9 w-9 rounded-xl bg-surface shadow-sm" aria-hidden="true" />
@@ -143,15 +162,17 @@ export default function BentoGrid() {
     if (t.key === "meetings") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-5 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="See more meetings">
-              More
-            </a>
-          </div>
-          <div className="mt-4 grid grid-cols-10 gap-2">
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={
+              <a href="#" className={`${pillLinkBase} ${pillOnGradientHeader}`} aria-label="See more meetings">
+                More
+              </a>
+            }
+            className="mb-4"
+          />
+          <div className="grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="h-10 rounded-lg bg-blue-100" aria-hidden="true" />
             ))}
@@ -163,15 +184,17 @@ export default function BentoGrid() {
     if (t.key === "ann") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="Know more announcements">
-              Know More
-            </a>
-          </div>
-          <div className="mt-3 grid grid-cols-12 gap-3">
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={
+              <a href="#" className={`${pillLinkBase} ${pillOnGradientHeader}`} aria-label="Know more announcements">
+                Know More
+              </a>
+            }
+            className="mb-3"
+          />
+          <div className="grid grid-cols-12 gap-3">
             <div className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
             <div className="col-span-4 grid grid-rows-3 gap-2">
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
@@ -187,6 +210,12 @@ export default function BentoGrid() {
     if (t.key === "ceo") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={null}
+            className="mb-3"
+          />
           <div className="flex items-start gap-3">
             <img
               alt=""
@@ -194,9 +223,7 @@ export default function BentoGrid() {
               className="h-14 w-14 rounded-full object-cover"
             />
             <div className="min-w-0">
-              <h3 id={`tile-${t.key}-title`} className={titleClass}>
-                {t.title}
-              </h3>
+              <h4 className="text-[15px] font-semibold text-slate-900">Quarterly update</h4>
               <p className="mt-1 text-sm text-slate-700 line-clamp-3">
                 A short update from leadership on the current quarter and what to expect next.
               </p>
@@ -212,15 +239,17 @@ export default function BentoGrid() {
     if (t.key === "tools") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="Manage tools">
-              Manage
-            </a>
-          </div>
-          <div className="mt-3 min-h-[90px] rounded-lg border border-gray-200" aria-hidden="true" />
+          <HeaderBar
+            id={`tile-${t.key}-title`}
+            title={t.title}
+            right={
+              <a href="#" className={`${pillLinkBase} ${pillOnGradientHeader}`} aria-label="Manage tools">
+                Manage
+              </a>
+            }
+            className="mb-3"
+          />
+          <div className="min-h-[90px] rounded-lg border border-gray-200" aria-hidden="true" />
         </section>
       );
     }
@@ -228,10 +257,8 @@ export default function BentoGrid() {
     if (t.key === "division") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <h3 id={`tile-${t.key}-title`} className={titleClass}>
-            {t.title}
-          </h3>
-          <div className="mt-3 space-y-2">
+          <HeaderBar id={`tile-${t.key}-title`} title={t.title} right={null} className="mb-3" />
+          <div className="space-y-2">
             {["Division 2025 Edition 1", "Division 2025 Edition 2", "Division 2025 Edition 3"].map((label) => (
               <button
                 key={label}
@@ -248,10 +275,8 @@ export default function BentoGrid() {
     if (t.key === "csr") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <h3 id={`tile-${t.key}-title`} className={titleClass}>
-            {t.title}
-          </h3>
-          <div className="mt-3 grid grid-cols-2 gap-3 items-center justify-items-center">
+          <HeaderBar id={`tile-${t.key}-title`} title={t.title} right={null} className="mb-3" />
+          <div className="grid grid-cols-2 gap-3 items-center justify-items-center">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-10 w-20 bg-gray-100 rounded-md" aria-hidden="true" />
             ))}
@@ -263,9 +288,7 @@ export default function BentoGrid() {
     // Fallback plain
     return (
       <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH || ""}`}>
-        <h3 id={`tile-${t.key}-title`} className={titleClass}>
-          {t.title}
-        </h3>
+        <HeaderBar id={`tile-${t.key}-title`} title={t.title} right={null} className="mb-2" />
         <p className="mt-2 text-sm text-slate-600">Content</p>
       </section>
     );
