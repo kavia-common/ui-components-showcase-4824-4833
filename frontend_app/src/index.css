@@ -10,6 +10,20 @@
   --color-bg: #f9fafb;
   --color-surface: #ffffff;
   --color-text: #111827;
+
+  /* Bento grid tokens from style guide */
+  --bg-canvas: #F2F4FF;
+  --card-bg: #FFFFFF;
+  --card-shadow: rgba(26,26,67,0.08);
+  --text-primary: #0E1B3D;
+  --text-secondary: #6D7385;
+
+  --brand-primary: #6D28D9;
+  --brand-primary-600: #7C3AED;
+  --chip-bg: #EEF3FF;
+
+  --tile-hero-gradient: linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%);
+  --tile-ld-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
 }
 
 html, body, #root {

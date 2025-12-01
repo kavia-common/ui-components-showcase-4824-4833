@@ -3,209 +3,409 @@ import React from "react";
 /**
  * PUBLIC_INTERFACE
  * BentoGrid
- * Asymmetric, dense CSS Grid layout whose visual style is now uniform per card:
- * - Identical header gradient, fixed header height/padding
- * - Consistent rounded corners and surface padding
- * - Subtle scale-only hover/focus-visible feedback (no color changes)
- * - Cohesive typography for titles/subtitles/content
- *
- * Overlap fix:
- * - Parent uses CSS Grid with consistent auto-rows and gaps per breakpoint.
- * - grid-auto-flow: dense at md+ to backfill holes.
- * - Per-card spans are tuned so they pack without collision.
- * - Hover transforms are modest and constrained with overflow-hidden and origin-center to prevent layout shifts.
+ * Responsive 12/8/6/1 column bento grid with Ocean Professional styling.
+ * Matches layout and behavior from assets/bento_grid_design_notes.md and style_guide.md:
+ * - Cards use rounded corners, soft shadows, and pill CTAs.
+ * - Desktop: 12 columns; Tablet: 8; Small tablet: 6; Mobile: 1.
+ * - Uniform internal padding and typography.
  */
 export default function BentoGrid() {
   /**
-   * Layout
-   * - xs: 1 column stack.
-   * - sm: 2 columns.
-   * - md: 6 columns mosaic.
-   * - lg: 8 columns mosaic.
-   * - Auto rows fixed at md+/lg for predictable row-span sizing.
-   *   Use a slightly taller base row (104px) to accommodate header + body content.
+   * The tile map approximates the screenshot:
+   * - A1 Hero (gradient), A2 Meetings
+   * - B1 Announcements, B2 CEO, B3 L&D
+   * - C1 Toolshelf, C2 Division, C3 Latest Update, C4 CSR
+   * - Section label: Employee Connect
+   * - E row: Clubs, Events, News
+   * - F row: Birthdays, Work Anniversaries, Recognitions
    */
-  const cards = [
-    // Wide hero card; occupies the top-left area
-    {
-      title: "Fast",
-      desc: "Optimized build with minimal dependencies.",
-      span: {
-        sm: "sm:col-span-2 sm:row-span-2",
-        md: "md:col-span-4 md:row-span-2",
-        lg: "lg:col-span-5 lg:row-span-2",
-      },
-    },
-    // Small single block
-    {
-      title: "Themed",
-      desc: "Ocean Professional palette out-of-the-box.",
-      span: {
-        sm: "sm:col-span-1 sm:row-span-1",
-        md: "md:col-span-2 md:row-span-1",
-        lg: "lg:col-span-3 lg:row-span-1",
-      },
-    },
-    // Tall narrow block
-    {
-      title: "Responsive",
-      desc: "Mobile-first, adapts to all screen sizes.",
-      span: {
-        sm: "sm:col-span-1 sm:row-span-2",
-        md: "md:col-span-2 md:row-span-2",
-        lg: "lg:col-span-3 lg:row-span-2",
-      },
-    },
-    // Small single block
-    {
-      title: "Accessible",
-      desc: "Usability and semantics considered.",
-      span: {
-        sm: "sm:col-span-1 sm:row-span-1",
-        md: "md:col-span-2 md:row-span-1",
-        lg: "lg:col-span-2 lg:row-span-1",
-      },
-    },
-    // Small single block
-    {
-      title: "Composable",
-      desc: "Mix and match primitives for velocity.",
-      span: {
-        sm: "sm:col-span-1 sm:row-span-1",
-        md: "md:col-span-2 md:row-span-1",
-        lg: "lg:col-span-2 lg:row-span-1",
-      },
-    },
-    // Medium wide block
-    {
-      title: "Performant",
-      desc: "GPU-accelerated transitions, no jank.",
-      span: {
-        sm: "sm:col-span-2 sm:row-span-2",
-        md: "md:col-span-3 md:row-span-2",
-        lg: "lg:col-span-4 lg:row-span-2",
-      },
-    },
-    // Small block
-    {
-      title: "Reliable",
-      desc: "Mature build tooling and proven patterns.",
-      span: {
-        sm: "sm:col-span-1 sm:row-span-1",
-        md: "md:col-span-2 md:row-span-1",
-        lg: "lg:col-span-2 lg:row-span-1",
-      },
-    },
-    // Medium-tall block; tuned spans to avoid collision with previous items at lg
-    {
-      title: "Extensible",
-      desc: "Scale components as your app grows.",
-      span: {
-        sm: "sm:col-span-1 sm:row-span-2",
-        md: "md:col-span-3 md:row-span-2",
-        lg: "lg:col-span-3 lg:row-span-2",
-      },
-    },
+  const tiles = [
+    { key: "hero", title: "Dixon’s Value Proposition (EVP)", variant: "gradient-hero", spans: "col-span-12 lg:col-span-8", minH: "min-h-[170px]" },
+    { key: "meetings", title: "Meetings", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
+
+    { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 lg:col-span-6", minH: "min-h-[180px]" },
+    { key: "ceo", title: "Insights from CEO", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[180px]" },
+    { key: "ld", title: "L&D Insights", variant: "gradient-ld", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[180px]" },
+
+    { key: "tools", title: "Toolshelf", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
+    { key: "division", title: "Division", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
+    { key: "latest", title: "Latest Update", variant: "tinted-blue", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
+    { key: "csr", title: "CSR@TDI", variant: "plain", spans: "col-span-12 sm:col-span-6 lg:col-span-3", minH: "min-h-[160px]" },
+
+    { key: "section", title: "Employee Connect", variant: "label", spans: "col-span-12" },
+
+    { key: "clubs", title: "Clubs", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
+    { key: "events", title: "Events", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
+    { key: "news", title: "News", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
+
+    { key: "birthdays", title: "Birthdays", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
+    { key: "anniv", title: "Work Anniversaries", variant: "plain", spans: "col-span-12 md:col-span-6 lg:col-span-4", minH: "min-h-[170px]" },
+    { key: "reco", title: "Recognitions", variant: "plain", spans: "col-span-12 lg:col-span-4", minH: "min-h-[170px]" },
   ];
 
+  // Shared styles
+  const cardBase =
+    "rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50";
+  const cardPlain = `bg-white ${cardBase}`;
+  const cardTinted = `${cardBase} bg-[#EAF2FF]`;
+  const headerClass = "flex items-center justify-between";
+  const titleClass = "text-[16px] md:text-[17px] font-semibold text-slate-900";
+  const pillLink =
+    "inline-flex items-center h-8 px-3 rounded-full text-[12px] font-medium bg-[var(--chip-bg,#EEF3FF)] text-[var(--brand-primary-600,#7C3AED)] hover:bg-[var(--brand-primary-600,#7C3AED)] hover:text-white transition focus-ring";
+
   // PUBLIC_INTERFACE
-  // Helper to serialize per-breakpoint span hints into Tailwind classes.
-  function spanToClass(span) {
-    /**
-     * Convert span object (sm/md/ld keys with class strings) into a single
-     * className string, preserving prefixes for breakpoints.
-     */
-    if (!span) return "";
-    const sm = span.sm ? `${span.sm}` : "";
-    const md = span.md ? `${span.md}` : "";
-    const lg = span.lg ? `${span.lg}` : "";
-    return [sm, md, lg].filter(Boolean).join(" ");
-  }
+  // Render a tile by variant
+  const Tile = ({ t }) => {
+    if (t.variant === "label") {
+      return (
+        <h2 className={`${t.spans} text-[20px] font-bold text-slate-900 mt-1`} role="heading" aria-level={2}>
+          {t.title}
+        </h2>
+      );
+    }
 
-  // Shared visual tokens for uniform styling
-  const headerGradient =
-    "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+    if (t.variant === "gradient-hero") {
+      return (
+        <section
+          role="region"
+          aria-labelledby={`tile-${t.key}-title`}
+          className={`${t.spans} text-white ${cardBase} p-6 relative overflow-hidden`}
+          style={{ background: "var(--tile-hero-gradient, linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%))" }}
+        >
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className="text-[18px] font-semibold leading-6">
+              {t.title}
+            </h3>
+            <button className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/15 hover:bg-white hover:text-[var(--brand-primary,#6D28D9)] transition">
+              Know More
+            </button>
+          </div>
 
-  // Fixed header height and padding for consistency
-  const headerStyle = {
-    background: headerGradient,
-    color: "#ffffff",
-    minHeight: 48, // consistent header height target
+          <div className="mt-3 text-sm text-white/90 max-w-[48ch]">
+            Rewards, Recognition, Be Squad, Engagement Platform, Employee Wellness, You Matter
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {["Rewards", "Recognition", "Be Squad", "Engagement", "Wellness", "You Matter"].map((c) => (
+              <span key={c} className="rounded-full bg-white/15 px-3 py-1 text-[12px] font-medium backdrop-blur-sm">
+                {c}
+              </span>
+            ))}
+          </div>
+
+          {/* Decorative right bubbles */}
+          <div className="pointer-events-none absolute right-4 top-4 hidden md:flex gap-2 opacity-25">
+            <span className="h-6 w-6 rounded-full bg-white/60" />
+            <span className="h-6 w-6 rounded-full bg-yellow-300/80" />
+            <span className="h-6 w-6 rounded-full bg-pink-300/80" />
+          </div>
+        </section>
+      );
+    }
+
+    if (t.variant === "gradient-ld") {
+      return (
+        <section
+          role="region"
+          aria-labelledby={`tile-${t.key}-title`}
+          className={`${t.spans} text-white ${cardBase} p-4 relative overflow-hidden`}
+          style={{ background: "var(--tile-ld-gradient, linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%))" }}
+        >
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className="text-[16px] font-semibold leading-6">
+              {t.title}
+            </h3>
+            <button className="inline-flex items-center h-8 px-3 rounded-full text-sm font-medium bg-white/10 hover:bg-white hover:text-[var(--brand-primary,#6D28D9)] transition">
+              Know More
+            </button>
+          </div>
+          <p className="mt-2 text-sm text-white/90">Upskill with curated learning content and programs.</p>
+          <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-white/15" aria-hidden="true" />
+        </section>
+      );
+    }
+
+    if (t.variant === "tinted-blue") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardTinted} p-4`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="View All latest updates">
+              View All
+            </a>
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-9 w-9 rounded-xl bg-white shadow-sm" aria-hidden="true" />
+            ))}
+          </div>
+          <ul className="mt-3 list-disc list-inside text-sm text-slate-700 space-y-1.5">
+            <li>New release notes available</li>
+            <li>Security bulletin: best practices</li>
+            <li>App performance improvements</li>
+          </ul>
+        </section>
+      );
+    }
+
+    // Plain card variants
+    if (t.key === "meetings") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-5 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="See more meetings">
+              More
+            </a>
+          </div>
+          <div className="mt-4 grid grid-cols-10 gap-2">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-lg bg-indigo-100/80" aria-hidden="true" />
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "ann") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="Know more announcements">
+              Know More
+            </a>
+          </div>
+          <div className="mt-3 grid grid-cols-12 gap-3">
+            <div className="col-span-8 rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
+            <div className="col-span-4 grid grid-rows-3 gap-2">
+              <div className="rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-slate-100 aspect-[16/9]" aria-hidden="true" />
+            </div>
+          </div>
+          <p className="mt-2 text-sm text-slate-600">Highlights from across the organization this week.</p>
+        </section>
+      );
+    }
+
+    if (t.key === "ceo") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className="flex items-start gap-3">
+            <img
+              alt=""
+              src="https://dummyimage.com/56x56/94a3b8/ffffff&text=CEO"
+              className="h-14 w-14 rounded-full object-cover"
+            />
+            <div className="min-w-0">
+              <h3 id={`tile-${t.key}-title`} className={titleClass}>
+                {t.title}
+              </h3>
+              <p className="mt-1 text-sm text-slate-700 line-clamp-3">
+                A short update from leadership on the current quarter and what to expect next.
+              </p>
+              <button className="mt-2 rounded-full bg-[var(--brand-primary-600,#7C3AED)] px-4 h-9 text-sm font-semibold text-white hover:brightness-110 focus-ring">
+                Read
+              </button>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "tools") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="Manage tools">
+              Manage
+            </a>
+          </div>
+          <div className="mt-3 min-h-[90px] rounded-lg border border-slate-200/60" aria-hidden="true" />
+        </section>
+      );
+    }
+
+    if (t.key === "division") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <h3 id={`tile-${t.key}-title`} className={titleClass}>
+            {t.title}
+          </h3>
+          <div className="mt-3 space-y-2">
+            {["Division 2025 Edition 1", "Division 2025 Edition 2", "Division 2025 Edition 3"].map((label) => (
+              <button
+                key={label}
+                className="w-full h-10 rounded-full text-[var(--brand-primary-600,#7C3AED)] bg-[var(--info-50,#EEF2FF)] hover:bg-[var(--brand-primary-600,#7C3AED)] hover:text-white transition focus-ring"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "csr") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <h3 id={`tile-${t.key}-title`} className={titleClass}>
+            {t.title}
+          </h3>
+          <div className="mt-3 grid grid-cols-2 gap-3 items-center justify-items-center">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-10 w-20 bg-slate-100 rounded-md" aria-hidden="true" />
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "clubs") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="View all clubs">
+              View All
+            </a>
+          </div>
+          <div className="mt-3 grid grid-cols-5 gap-3">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-[11px] text-slate-500">
+                C{i + 1}
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "events") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="Know more events">
+              Know More
+            </a>
+          </div>
+          <div className="mt-3 w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-800 flex items-end p-3">
+            <div className="text-white text-sm">Townhall • Dec 12</div>
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "news") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label="View all news">
+              View All
+            </a>
+          </div>
+          <div className="mt-3 flex gap-3 overflow-x-auto snap-x snap-mandatory">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="min-w-[140px] snap-start rounded-lg bg-white shadow-sm overflow-hidden">
+                <div className="h-20 bg-slate-200" />
+                <div className="p-2 text-sm">Headline {i + 1}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "birthdays" || t.key === "anniv") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <div className={headerClass}>
+            <h3 id={`tile-${t.key}-title`} className={titleClass}>
+              {t.title}
+            </h3>
+            <a href="#" className={pillLink} aria-label={`View all ${t.key === "birthdays" ? "birthdays" : "anniversaries"}`}>
+              View All
+            </a>
+          </div>
+          <div className="mt-3 flex gap-3 overflow-x-auto snap-x snap-mandatory">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="min-w-[120px] snap-start rounded-lg bg-slate-50 p-3 flex flex-col items-center gap-2 hover:shadow transition">
+                <div className="h-12 w-12 rounded-full bg-slate-200" aria-hidden="true" />
+                <div className="text-sm font-medium text-slate-800">Person {i + 1}</div>
+                <div className="text-[12px] text-slate-500">{t.key === "birthdays" ? "Dec 12" : "2 yrs"}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (t.key === "reco") {
+      return (
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          <h3 id={`tile-${t.key}-title`} className={titleClass}>
+            {t.title}
+          </h3>
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-lg bg-slate-50 p-3 flex gap-3 items-center">
+                <div className="h-8 w-8 rounded-full bg-amber-200" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-800">Recognition {i + 1}</p>
+                  <p className="text-[12px] text-slate-500">Great job on the Q4 launch.</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    // Fallback plain
+    return (
+      <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH || ""}`}>
+        <h3 id={`tile-${t.key}-title`} className={titleClass}>
+          {t.title}
+        </h3>
+        <p className="mt-2 text-sm text-slate-600">Content</p>
+      </section>
+    );
   };
 
   return (
-    <section aria-label="Bento grid of features" className="w-full">
-      {/* Grid shell with consistent rows and dense packing */}
+    <section aria-label="Bento Grid Dashboard" className="w-full">
       <div
         className={[
           "grid",
-          // Keep a tiny visual gap; avoid zero to reduce accidental overlap illusions
-          "gap-2 sm:gap-2 md:gap-3 lg:gap-3",
-          // Responsive columns
+          // 12-col desktop, 8-col large tablet, 6-col tablet, 1-col mobile
           "grid-cols-1",
-          "sm:grid-cols-2",
           "md:grid-cols-6",
           "lg:grid-cols-8",
-          // Consistent auto-rows for predictable row-span sizing
-          // Slightly taller base at md/lg to fit header + body content comfortably
-          "auto-rows-[minmax(120px,auto)] sm:auto-rows-[minmax(120px,auto)] md:auto-rows-[104px] lg:auto-rows-[104px]",
-          // Dense packing so items fill available gaps
-          "md:[grid-auto-flow:dense] lg:[grid-auto-flow:dense]",
+          "xl:grid-cols-12",
+          // Gaps per notes
+          "gap-3 md:gap-4",
         ].join(" ")}
       >
-        {cards.map((c, i) => (
-          <article
-            key={`${c.title}-${i}`}
-            className={[
-              "col-span-1",
-              spanToClass(c.span),
-              // Surface with rounded corners and isolation
-              "bg-[var(--color-surface)] overflow-hidden rounded-xl",
-              // Unified border for all cards
-              "border border-white/10",
-              // Subtle elevation
-              "shadow-soft",
-              // Constrained hover to avoid layout shifts
-              "transform-gpu will-change-transform origin-center",
-              "transition-transform duration-200 ease-out",
-              "hover:scale-[1.01] focus-within:scale-[1.01]",
-              // Create a new stacking context and clip hover scale
-              "relative isolate",
-            ].join(" ")}
-            aria-label={`${c.title} card`}
-          >
-            {/* Uniform gradient header with fixed height/padding */}
-            <header
-              className="flex items-center px-4 py-3 border-b border-white/15"
-              style={headerStyle}
-            >
-              <h3 className="text-[15px] sm:text-sm font-semibold leading-6 text-white">
-                {c.title}
-              </h3>
-            </header>
-
-            {/* Consistent body padding and typography */}
-            <div className="p-4 md:p-5">
-              <p className="text-[14px] sm:text-sm leading-relaxed text-gray-700">
-                {c.desc}
-              </p>
-
-              <div className="mt-3.5 flex items-center justify-between">
-                {/* Demo block scales with row-span via fixed auto-rows */}
-                <div
-                  className="flex-1 rounded-lg bg-blue-50"
-                  style={{ height: "3.75rem" }} // modest baseline height; larger spans visually grow via auto-rows
-                  aria-hidden="true"
-                />
-                <a
-                  href="#"
-                  className="ml-4 rounded-full px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 focus-ring"
-                >
-                  Details
-                </a>
-              </div>
-            </div>
-          </article>
+        {tiles.map((t) => (
+          <Tile key={t.key} t={t} />
         ))}
       </div>
     </section>
