@@ -4,13 +4,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
  * PUBLIC_INTERFACE
  * FormWizard
  * Four-step wizard with free navigation (Next/Back and clickable stepper),
- * deferred validation until submission, and acknowledgement screen.
+ * live validation with touched/dirty tracking, and acknowledgement screen.
  *
- * Updates per task:
- * 1) Next and Back always navigate between steps without blocking on validation.
- * 2) Progress step indicators are clickable to jump to any section.
- * 3) Validation is deferred to submission time; Submit is enabled only when all steps are valid and consent checked.
- * 4) Acknowledgement screen is preserved after successful submit.
+ * Validation behavior:
+ * - Show error messages only after a field is interacted with (touched or dirty).
+ * - Errors disappear immediately when the value becomes valid.
+ * - Next/Back always navigate; Submit is disabled until all required fields are valid.
+ * - Acknowledgement screen remains after successful submit.
  */
 export default function FormWizard() {
   // Steps metadata (static; stable keys)
@@ -45,7 +45,11 @@ export default function FormWizard() {
     consent: false,
   });
 
-  // Errors keyed by field name (used for inline hints; not blocking navigation)
+  // Track touched/dirty per field to control when to show errors
+  const [touched, setTouched] = useState({});
+  const [dirty, setDirty] = useState({});
+
+  // Errors keyed by field name; recomputed live and merged into this state for inline display
   const [errors, setErrors] = useState({});
 
   // Track active typing (for small UX niceties; no navigation blocking)
@@ -117,27 +121,27 @@ export default function FormWizard() {
   );
 
   // PUBLIC_INTERFACE
-  // Step validation: returns errors for a target step. Does not block navigation.
+  // Step validation: returns errors for a target step (pure, no side effects).
   const getStepErrors = useCallback(
-    (targetStep) => {
+    (targetStep, values = data) => {
       const e = {};
       if (targetStep === 1) {
-        if (!data.username.trim()) e.username = "Username is required";
-        if (data.password.length < 8)
+        if (!values.username.trim()) e.username = "Username is required";
+        if (values.password.length < 8)
           e.password = "Password must be at least 8 characters";
-        if (data.confirm !== data.password)
+        if (values.confirm !== values.password)
           e.confirm = "Passwords do not match";
       } else if (targetStep === 2) {
-        if (!data.firstName.trim()) e.firstName = "First name is required";
-        if (!data.lastName.trim()) e.lastName = "Last name is required";
-        if (!isValidEmail(data.email)) e.email = "Enter a valid email address";
+        if (!values.firstName.trim()) e.firstName = "First name is required";
+        if (!values.lastName.trim()) e.lastName = "Last name is required";
+        if (!isValidEmail(values.email)) e.email = "Enter a valid email address";
       } else if (targetStep === 3) {
-        if (!data.topic) e.topic = "Please select a topic";
-        if (!["daily", "weekly", "monthly"].includes(data.delivery)) {
+        if (!values.topic) e.topic = "Please select a topic";
+        if (!["daily", "weekly", "monthly"].includes(values.delivery)) {
           e.delivery = "Select a delivery frequency";
         }
       } else if (targetStep === 4) {
-        if (!data.consent)
+        if (!values.consent)
           e.consent = "You must provide consent before submitting";
       }
       return e;
@@ -160,10 +164,19 @@ export default function FormWizard() {
     );
   }, [getStepErrors]);
 
-  // Helpers for visual progress only
-  const computeS1 = useCallback(() => Object.keys(getStepErrors(1)).length === 0, [getStepErrors]);
-  const computeS2 = useCallback(() => Object.keys(getStepErrors(2)).length === 0, [getStepErrors]);
-  const computeS3 = useCallback(() => Object.keys(getStepErrors(3)).length === 0, [getStepErrors]);
+  // Helpers for progress visuals
+  const computeS1 = useCallback(
+    () => Object.keys(getStepErrors(1)).length === 0,
+    [getStepErrors]
+  );
+  const computeS2 = useCallback(
+    () => Object.keys(getStepErrors(2)).length === 0,
+    [getStepErrors]
+  );
+  const computeS3 = useCallback(
+    () => Object.keys(getStepErrors(3)).length === 0,
+    [getStepErrors]
+  );
 
   const step1Valid = computeS1();
   const step2Valid = computeS2();
@@ -184,24 +197,57 @@ export default function FormWizard() {
     }, 250);
   }, []);
 
+  // Set field touched state
+  const markTouched = useCallback((field) => {
+    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+  }, []);
+
+  // Update dirty state (field considered dirty after first change)
+  const markDirty = useCallback((field) => {
+    setDirty((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+  }, []);
+
+  // PUBLIC_INTERFACE
+  // Live onChange handler with validation updates and dirty tracking
   const onChange = useCallback(
     (field) => (e) => {
       const value =
         e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
       markTyping();
-      setData((prev) => ({ ...prev, [field]: value }));
+      markDirty(field);
+      setData((prev) => {
+        const next = { ...prev, [field]: value };
+        // Recompute step errors for the field's step to allow instant hide/show
+        const stepForField =
+          field === "username" || field === "password" || field === "confirm"
+            ? 1
+            : field === "firstName" || field === "lastName" || field === "email"
+            ? 2
+            : field === "topic" || field === "delivery" || field === "interest"
+            ? 3
+            : 4;
+        const stepErrors = getStepErrors(stepForField, next);
+        setErrors((prevErr) => ({ ...prevErr, ...stepErrors }));
+        return next;
+      });
     },
-    [markTyping]
+    [getStepErrors, markDirty, markTyping]
   );
 
-  const onFocus = useCallback((field) => (e) => {
-    lastFocusedFieldRef.current = field;
-    if (!lastFocusReasonRef.current) lastFocusReasonRef.current = "programmatic";
-    isTypingRef.current = true;
-    if (inputRefs.current[field] == null) {
-      inputRefs.current[field] = e?.currentTarget ?? null;
-    }
-  }, []);
+  const onFocus = useCallback(
+    (field) => (e) => {
+      lastFocusedFieldRef.current = field;
+      if (!lastFocusReasonRef.current)
+        lastFocusReasonRef.current = "programmatic";
+      isTypingRef.current = true;
+      if (inputRefs.current[field] == null) {
+        inputRefs.current[field] = e?.currentTarget ?? null;
+      }
+      // Mark touched on focus so first interaction allows error visibility
+      markTouched(field);
+    },
+    [markTouched]
+  );
 
   const onBlurField = useCallback(
     (stepForField) => (e) => {
@@ -211,7 +257,10 @@ export default function FormWizard() {
       const active = document.activeElement;
       const isLegit =
         (related && related instanceof HTMLElement) ||
-        (active && active !== document.body && active !== null && active !== undefined);
+        (active &&
+          active !== document.body &&
+          active !== null &&
+          active !== undefined);
       if (!isLegit) {
         lastFocusReasonRef.current = "unexpected-blur";
       }
@@ -314,7 +363,15 @@ export default function FormWizard() {
         </div>
       </div>
     );
-  }, [headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]);
+  }, [
+    headerGradient,
+    percentComplete,
+    step,
+    step1Valid,
+    step2Valid,
+    step3Valid,
+    steps,
+  ]);
 
   // Input refs setter
   const setInputRef = useCallback((field) => (el) => {
@@ -334,7 +391,9 @@ export default function FormWizard() {
     const reason = lastFocusReasonRef.current;
 
     const activeIsNullish =
-      !active || active === document.body || (active && !(active instanceof HTMLElement));
+      !active ||
+      active === document.body ||
+      (active && !(active instanceof HTMLElement));
 
     const shouldRestore =
       (reason === "unexpected-blur" && (activeIsNullish || refElRemoved)) ||
@@ -369,7 +428,13 @@ export default function FormWizard() {
             style={{ background: "rgba(24,64,160,0.08)" }}
             aria-hidden="true"
           >
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="28"
+              height="28"
+              fill="none"
+              aria-hidden="true"
+            >
               <defs>
                 <linearGradient id="ack-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="10%" stopColor="#af2497" />
@@ -412,6 +477,12 @@ export default function FormWizard() {
       </div>
     );
   };
+
+  // Helper to decide if an error should be visible (only after interaction)
+  const shouldShowError = useCallback(
+    (field) => !!errors[field] && (touched[field] || dirty[field]),
+    [dirty, errors, touched]
+  );
 
   return (
     <section
@@ -458,11 +529,14 @@ export default function FormWizard() {
                         value={data.username}
                         onFocus={onFocus("username")}
                         onChange={onChange("username")}
-                        onBlur={onBlurField(1)}
+                        onBlur={(e) => {
+                          onBlurField(1)(e);
+                          markTouched("username");
+                        }}
                         autoComplete="username"
                       />
                     </div>
-                    {errors.username && (
+                    {shouldShowError("username") && (
                       <p className="text-xs text-red-600 mt-1">{errors.username}</p>
                     )}
                   </div>
@@ -483,12 +557,15 @@ export default function FormWizard() {
                         value={data.password}
                         onFocus={onFocus("password")}
                         onChange={onChange("password")}
-                        onBlur={onBlurField(1)}
+                        onBlur={(e) => {
+                          onBlurField(1)(e);
+                          markTouched("password");
+                        }}
                         type="password"
                         autoComplete="new-password"
                       />
                     </div>
-                    {errors.password && (
+                    {shouldShowError("password") && (
                       <p className="text-xs text-red-600 mt-1">{errors.password}</p>
                     )}
                   </div>
@@ -509,12 +586,15 @@ export default function FormWizard() {
                         value={data.confirm}
                         onFocus={onFocus("confirm")}
                         onChange={onChange("confirm")}
-                        onBlur={onBlurField(1)}
+                        onBlur={(e) => {
+                          onBlurField(1)(e);
+                          markTouched("confirm");
+                        }}
                         type="password"
                         autoComplete="new-password"
                       />
                     </div>
-                    {errors.confirm && (
+                    {shouldShowError("confirm") && (
                       <p className="text-xs text-red-600 mt-1">{errors.confirm}</p>
                     )}
                   </div>
@@ -545,11 +625,14 @@ export default function FormWizard() {
                           value={data.firstName}
                           onFocus={onFocus("firstName")}
                           onChange={onChange("firstName")}
-                          onBlur={onBlurField(2)}
+                          onBlur={(e) => {
+                            onBlurField(2)(e);
+                            markTouched("firstName");
+                          }}
                           autoComplete="given-name"
                         />
                       </div>
-                      {errors.firstName && (
+                      {shouldShowError("firstName") && (
                         <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>
                       )}
                     </div>
@@ -569,11 +652,14 @@ export default function FormWizard() {
                           value={data.lastName}
                           onFocus={onFocus("lastName")}
                           onChange={onChange("lastName")}
-                          onBlur={onBlurField(2)}
+                          onBlur={(e) => {
+                            onBlurField(2)(e);
+                            markTouched("lastName");
+                          }}
                           autoComplete="family-name"
                         />
                       </div>
-                      {errors.lastName && (
+                      {shouldShowError("lastName") && (
                         <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>
                       )}
                     </div>
@@ -595,12 +681,15 @@ export default function FormWizard() {
                         value={data.email}
                         onFocus={onFocus("email")}
                         onChange={onChange("email")}
-                        onBlur={onBlurField(2)}
+                        onBlur={(e) => {
+                          onBlurField(2)(e);
+                          markTouched("email");
+                        }}
                         type="email"
                         autoComplete="email"
                       />
                     </div>
-                    {errors.email && (
+                    {shouldShowError("email") && (
                       <p className="text-xs text-red-600 mt-1">{errors.email}</p>
                     )}
                   </div>
@@ -630,7 +719,10 @@ export default function FormWizard() {
                         value={data.topic}
                         onFocus={onFocus("topic")}
                         onChange={onChange("topic")}
-                        onBlur={onBlurField(3)}
+                        onBlur={(e) => {
+                          onBlurField(3)(e);
+                          markTouched("topic");
+                        }}
                       >
                         <option value="">Select a topic</option>
                         <option value="design">Design</option>
@@ -639,7 +731,7 @@ export default function FormWizard() {
                         <option value="marketing">Marketing</option>
                       </select>
                     </div>
-                    {errors.topic && (
+                    {shouldShowError("topic") && (
                       <p className="text-xs text-red-600 mt-1">{errors.topic}</p>
                     )}
                   </div>
@@ -671,8 +763,14 @@ export default function FormWizard() {
                             value={opt.value}
                             checked={data.delivery === opt.value}
                             onFocus={onFocus("delivery")}
-                            onChange={onChange("delivery")}
-                            onBlur={onBlurField(3)}
+                            onChange={(e) => {
+                              onChange("delivery")(e);
+                              markTouched("delivery");
+                            }}
+                            onBlur={(e) => {
+                              onBlurField(3)(e);
+                              markTouched("delivery");
+                            }}
                             className="accent-blue-600"
                             ref={i === 0 ? setInputRef("delivery") : undefined}
                           />
@@ -685,7 +783,7 @@ export default function FormWizard() {
                         </label>
                       ))}
                     </div>
-                    {errors.delivery && (
+                    {shouldShowError("delivery") && (
                       <p className="text-xs text-red-600 mt-2">{errors.delivery}</p>
                     )}
                   </fieldset>
@@ -706,7 +804,10 @@ export default function FormWizard() {
                         value={data.interest}
                         onFocus={onFocus("interest")}
                         onChange={onChange("interest")}
-                        onBlur={onBlurField(3)}
+                        onBlur={(e) => {
+                          onBlurField(3)(e);
+                          markTouched("interest");
+                        }}
                         placeholder="Tell us more about your interests"
                       />
                     </div>
@@ -733,7 +834,8 @@ export default function FormWizard() {
                         <strong>Username:</strong> {data.username || "—"}
                       </p>
                       <p>
-                        <strong>Password:</strong> {data.password ? "••••••••" : "—"}
+                        <strong>Password:</strong>{" "}
+                        {data.password ? "••••••••" : "—"}
                       </p>
                       <button
                         type="button"
@@ -779,7 +881,9 @@ export default function FormWizard() {
                       className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold"
                       style={{ background: headerGradient }}
                     >
-                      <span style={{ textTransform: "uppercase" }}>Preferences</span>
+                      <span style={{ textTransform: "uppercase" }}>
+                        Preferences
+                      </span>
                     </div>
                     <div className="p-3 text-sm text-gray-800">
                       <p>
@@ -809,19 +913,34 @@ export default function FormWizard() {
                         ref={setInputRef("consent")}
                         checked={data.consent}
                         onFocus={onFocus("consent")}
-                        onChange={onChange("consent")}
-                        onBlur={onBlurField(4)}
+                        onChange={(e) => {
+                          onChange("consent")(e);
+                          markTouched("consent");
+                        }}
+                        onBlur={(e) => {
+                          onBlurField(4)(e);
+                          markTouched("consent");
+                        }}
                         aria-describedby="fw-consent-help"
                       />
-                      <span className="text-sm" style={{ textTransform: "uppercase" }}>
+                      <span
+                        className="text-sm"
+                        style={{ textTransform: "uppercase" }}
+                      >
                         I consent to submit this information
                       </span>
                     </label>
-                    <p id="fw-consent-help" className="text-xs text-gray-600 mt-1">
-                      Submit is enabled when all steps are valid and consent is checked.
+                    <p
+                      id="fw-consent-help"
+                      className="text-xs text-gray-600 mt-1"
+                    >
+                      Submit is enabled when all steps are valid and consent is
+                      checked.
                     </p>
-                    {errors.consent && (
-                      <p className="text-xs text-red-600 mt-1">{errors.consent}</p>
+                    {shouldShowError("consent") && (
+                      <p className="text-xs text-red-600 mt-1">
+                        {errors.consent}
+                      </p>
                     )}
                   </div>
                 </section>
@@ -901,6 +1020,20 @@ export default function FormWizard() {
                       setErrors(merged);
                       if (Object.keys(merged).length === 0) {
                         setSubmitted(true);
+                      } else {
+                        // Mark all fields touched to reveal any remaining invalids at submit time
+                        setTouched((prev) => ({
+                          ...prev,
+                          username: true,
+                          password: true,
+                          confirm: true,
+                          firstName: true,
+                          lastName: true,
+                          email: true,
+                          topic: true,
+                          delivery: true,
+                          consent: true,
+                        }));
                       }
                     }}
                     disabled={!isFormValid}
