@@ -6,12 +6,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
  * Four-step wizard with validation, clickable progress stepper,
  * review with per-section edit/save, and consent-gated submission.
  *
- * Enhancements in this patch:
- * - Fix Next button behavior (ensure it advances within bounds, prevent accidental form submit).
- * - Wrap wizard in a centered, narrower container (responsive max-w and side padding/margins).
- * - Add a post-submit acknowledgement view with success icon and restart CTA.
- * - Ensure Back is hidden on the first step and keyboard navigation works.
- * - Buttons explicitly set type="button" unless actually submitting.
+ * Fixes:
+ * 1) Next button reliably advances steps and never triggers an accidental form submit.
+ * 2) Preferences step correctly captures Topic and Delivery state; selecting a topic enables Next.
+ * 3) Added/verified state bindings and handlers for all controls.
  */
 export default function FormWizard() {
   // Steps metadata (static; stable keys)
@@ -73,6 +71,21 @@ export default function FormWizard() {
   // When editing within Review, track which section is in edit mode (1,2,3) or null
   const [editingSection, setEditingSection] = useState(null);
 
+  // Global keydown handler to prevent Enter in inputs from triggering implicit form submits
+  useEffect(() => {
+    const preventEnterSubmit = (e) => {
+      const target = e.target;
+      const tag = target?.tagName?.toLowerCase();
+      const isTextInput =
+        tag === "input" || tag === "textarea" || tag === "select";
+      if (isTextInput && e.key === "Enter") {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", preventEnterSubmit, true);
+    return () => window.removeEventListener("keydown", preventEnterSubmit, true);
+  }, []);
+
   // Detect keyboard navigation (Tab/Shift+Tab) and mouse interactions to set focus reason.
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -97,7 +110,10 @@ export default function FormWizard() {
   }, []);
 
   // Utility: email regex
-  const isValidEmail = useCallback((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), []);
+  const isValidEmail = useCallback(
+    (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+    []
+  );
 
   // PUBLIC_INTERFACE
   // Step validation: runs only when explicitly invoked (onBlur/Next/Save/Submit)
@@ -106,8 +122,10 @@ export default function FormWizard() {
       const e = {};
       if (targetStep === 1) {
         if (!data.username.trim()) e.username = "Username is required";
-        if (data.password.length < 8) e.password = "Password must be at least 8 characters";
-        if (data.confirm !== data.password) e.confirm = "Passwords do not match";
+        if (data.password.length < 8)
+          e.password = "Password must be at least 8 characters";
+        if (data.confirm !== data.password)
+          e.confirm = "Passwords do not match";
       } else if (targetStep === 2) {
         if (!data.firstName.trim()) e.firstName = "First name is required";
         if (!data.lastName.trim()) e.lastName = "Last name is required";
@@ -118,7 +136,8 @@ export default function FormWizard() {
           e.delivery = "Select a delivery frequency";
         }
       } else if (targetStep === 4) {
-        if (!data.consent) e.consent = "You must provide consent before submitting";
+        if (!data.consent)
+          e.consent = "You must provide consent before submitting";
       }
       if (persistErrors) setErrors(e);
       return Object.keys(e).length === 0;
@@ -126,10 +145,7 @@ export default function FormWizard() {
     [data, step, isValidEmail]
   );
 
-  /**
-   * Validity snapshot
-   * While typing, we serve the last cached snapshot to prevent any recompute during keystrokes.
-   */
+  /** Validity snapshot to avoid recompute while typing */
   const lastValidityRef = useRef({ s1: false, s2: false, s3: false });
 
   const computeS1 = useCallback(() => {
@@ -160,7 +176,6 @@ export default function FormWizard() {
     return true;
   }, [data.topic, data.delivery]);
 
-  // Recompute only when not typing; otherwise, serve last snapshot
   const step1Valid = useMemo(() => {
     if (isTypingRef.current) return lastValidityRef.current.s1;
     const v = computeS1();
@@ -182,9 +197,9 @@ export default function FormWizard() {
     return v;
   }, [computeS3, data.topic, data.delivery]);
 
-  // Progress percentage from cached validity only
   const percentComplete = useMemo(() => {
-    const completed = (step1Valid ? 1 : 0) + (step2Valid ? 1 : 0) + (step3Valid ? 1 : 0);
+    const completed =
+      (step1Valid ? 1 : 0) + (step2Valid ? 1 : 0) + (step3Valid ? 1 : 0);
     return Math.round((completed / 3) * 100);
   }, [step1Valid, step2Valid, step3Valid]);
 
@@ -206,7 +221,7 @@ export default function FormWizard() {
   // Step navigation: backward free; forward requires prior steps valid
   const goToStep = useCallback(
     (target) => {
-      if (isTypingRef.current) return; // guard against focus stealing
+      if (isTypingRef.current) return;
       if (target < step) {
         setStep(target);
         setEditingSection(null);
@@ -227,24 +242,23 @@ export default function FormWizard() {
     [step, validateStep]
   );
 
-  // Fix: ensure Next advances within bounds and doesn't submit a form
+  // Next/Prev controls with explicit preventDefault and bound limits
   const next = useCallback(
     (e) => {
       if (e && typeof e.preventDefault === "function") e.preventDefault();
       if (isTypingRef.current) return;
-      if (validateStep(step, true)) setStep((s) => Math.min(4, s + 1));
+      if (validateStep(step, true)) {
+        setStep((s) => Math.min(4, s + 1));
+      }
     },
     [step, validateStep]
   );
 
-  const prev = useCallback(
-    (e) => {
-      if (e && typeof e.preventDefault === "function") e.preventDefault();
-      if (isTypingRef.current) return;
-      setStep((s) => Math.max(1, s - 1));
-    },
-    []
-  );
+  const prev = useCallback((e) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    if (isTypingRef.current) return;
+    setStep((s) => Math.max(1, s - 1));
+  }, []);
 
   // Helpers for field changes (functional updates, raw values)
   const markTyping = useCallback(() => {
@@ -257,10 +271,11 @@ export default function FormWizard() {
 
   const onChange = useCallback(
     (field) => (e) => {
-      const value = e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
+      const value =
+        e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
       markTyping();
       setData((prev) => ({ ...prev, [field]: value }));
-      pendingFieldRef.current = field; // schedule validation after typing settles
+      pendingFieldRef.current = field;
     },
     [markTyping]
   );
@@ -268,7 +283,7 @@ export default function FormWizard() {
   const onFocus = useCallback((field) => (e) => {
     lastFocusedFieldRef.current = field;
     if (!lastFocusReasonRef.current) lastFocusReasonRef.current = "programmatic";
-    isTypingRef.current = true; // freeze visuals immediately on focus
+    isTypingRef.current = true;
     if (inputRefs.current[field] == null) {
       inputRefs.current[field] = e?.currentTarget ?? null;
     }
@@ -277,30 +292,27 @@ export default function FormWizard() {
   const onBlurField = useCallback(
     (stepForField) => (e) => {
       if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
-      isTypingRef.current = false; // allow recompute
+      isTypingRef.current = false;
       const related = e?.relatedTarget;
       const active = document.activeElement;
       const isLegit =
-        (related && (related instanceof HTMLElement)) ||
+        (related && related instanceof HTMLElement) ||
         (active && active !== document.body && active !== null && active !== undefined);
       if (!isLegit) {
         lastFocusReasonRef.current = "unexpected-blur";
       }
-      validateStep(stepForField, true); // validate on blur
+      validateStep(stepForField, true);
     },
     [validateStep]
   );
 
   // Review edit actions
-  const startEdit = useCallback(
-    (section) => {
-      if (isTypingRef.current) return;
-      setEditingSection(section);
-      setErrors({});
-      setStep(section);
-    },
-    []
-  );
+  const startEdit = useCallback((section) => {
+    if (isTypingRef.current) return;
+    setEditingSection(section);
+    setErrors({});
+    setStep(section);
+  }, []);
 
   const saveFromEdit = useCallback(() => {
     if (isTypingRef.current) return;
@@ -316,8 +328,8 @@ export default function FormWizard() {
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
   // Stepper isolated (does not live under step content subtree)
-  const Stepper = useCallback(
-    () => (
+  const Stepper = useCallback(() => {
+    return (
       <div className="mb-5">
         <div className="flex items-center justify-between gap-2">
           {steps.map((s) => {
@@ -385,9 +397,8 @@ export default function FormWizard() {
           </div>
         </div>
       </div>
-    ),
-    [goToStep, headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]
-  );
+    );
+  }, [goToStep, headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]);
 
   // Input refs setter
   const setInputRef = useCallback((field) => (el) => {
@@ -430,7 +441,7 @@ export default function FormWizard() {
   });
 
   // PUBLIC_INTERFACE
-  // Only enable Next if current step valid (uses cached snapshot; no recompute while typing)
+  // Only enable Next if current step valid
   const canProceed = useCallback(() => {
     if (step === 1) return step1Valid;
     if (step === 2) return step2Valid;
@@ -438,7 +449,6 @@ export default function FormWizard() {
     return true;
   }, [step, step1Valid, step2Valid, step3Valid]);
 
-  // Shared classes for panel visibility: render all, toggle hidden via CSS
   const panelBase = "mt-4";
   const hiddenCls = "hidden";
 
@@ -452,13 +462,7 @@ export default function FormWizard() {
             style={{ background: "rgba(24,64,160,0.08)" }}
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="28"
-              height="28"
-              fill="none"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden="true">
               <defs>
                 <linearGradient id="ack-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="10%" stopColor="#af2497" />
@@ -488,11 +492,11 @@ export default function FormWizard() {
             className="rounded-full px-5 h-10 text-sm font-semibold text-white focus-ring"
             style={{ background: headerGradient }}
             onClick={() => {
-              // reset to first step for another run
               setSubmitted(false);
               setStep(1);
               setEditingSection(null);
               setErrors({});
+              // clear data if desired; keeping user entries aids demo
             }}
           >
             <span style={{ textTransform: "uppercase" }}>Start Again</span>
@@ -508,7 +512,8 @@ export default function FormWizard() {
       role="region"
       aria-label="Form Wizard"
     >
-      <div className="surface p-5 md:p-6">
+      {/* Use div instead of form to avoid implicit submit behavior */}
+      <div className="surface p-5 md:p-6" role="group" aria-label="Wizard container">
         {!submitted ? (
           <>
             <header className="mb-4">
@@ -516,22 +521,19 @@ export default function FormWizard() {
                 <span style={{ textTransform: "uppercase" }}>Form Wizard</span>
               </h2>
               <p className="text-sm text-slate-600">
-                Complete the steps below. You can click the step labels to jump
-                back and edit.
+                Complete the steps below. You can click the step labels to jump back and edit.
               </p>
             </header>
 
-            {/* Stepper kept outside of step content subtree */}
             <Stepper />
 
-            {/* Persistently mounted panels to prevent remounts or focus loss */}
             <div className={panelBase} aria-live="polite">
+              {/* Step 1 */}
               <section
                 id="step-panel-1"
                 aria-labelledby="step-label-1"
                 className={step === 1 ? "" : hiddenCls}
               >
-                {/* Step 1 */}
                 <section aria-label="Account details" className="space-y-3">
                   <div>
                     <label
@@ -612,12 +614,12 @@ export default function FormWizard() {
                 </section>
               </section>
 
+              {/* Step 2 */}
               <section
                 id="step-panel-2"
                 aria-labelledby="step-label-2"
                 className={step === 2 ? "" : hiddenCls}
               >
-                {/* Step 2 */}
                 <section aria-label="Profile details" className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -698,12 +700,12 @@ export default function FormWizard() {
                 </section>
               </section>
 
+              {/* Step 3 */}
               <section
                 id="step-panel-3"
                 aria-labelledby="step-label-3"
                 className={step === 3 ? "" : hiddenCls}
               >
-                {/* Step 3 */}
                 <section aria-label="Preferences" className="space-y-4">
                   <div>
                     <label
@@ -805,12 +807,12 @@ export default function FormWizard() {
                 </section>
               </section>
 
+              {/* Step 4 */}
               <section
                 id="step-panel-4"
                 aria-labelledby="step-label-4"
                 className={step === 4 ? "" : hiddenCls}
               >
-                {/* Review */}
                 <section aria-label="Review" className="space-y-4">
                   <div className="rounded-lg border border-gray-200">
                     <div
@@ -972,7 +974,6 @@ export default function FormWizard() {
                     onClick={(e) => {
                       if (e && e.preventDefault) e.preventDefault();
                       if (validateStep(4, true)) {
-                        // show acknowledgement screen
                         setSubmitted(true);
                       }
                     }}
