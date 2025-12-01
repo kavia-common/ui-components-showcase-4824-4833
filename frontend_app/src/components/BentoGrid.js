@@ -40,17 +40,32 @@ export default function BentoGrid() {
   // Header gradient token (applied to all header areas)
   const headerGradient = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
-  // Reusable header block with gradient background and accessible text/icons
+  // Reusable header block with gradient background spanning 100% width/height.
+  // Ensures accessible contrast by forcing white text/icons inside header area.
   const HeaderBar = ({ id, title, right, className = "" }) => (
     <div
-      className={`rounded-xl px-3 py-2 ${className}`}
-      style={{ background: headerGradient }}
+      className={`rounded-xl ${className}`}
+      style={{
+        // Full header area gradient background
+        background: headerGradient,
+      }}
     >
-      <div className="flex items-center justify-between">
-        <h3 id={id} className="text-white text-[16px] md:text-[17px] font-semibold leading-6">
-          {title}
-        </h3>
-        <div className="flex items-center">{right}</div>
+      {/* Use an inner wrapper to guarantee padding is inside the gradient area
+          so no clipped/partial strips appear. */}
+      <div className="px-3 py-2">
+        <div className="flex items-center justify-between">
+          <h3
+            id={id}
+            className="text-white text-[16px] md:text-[17px] font-semibold leading-6"
+          >
+            {title}
+          </h3>
+          {/* Force header actions to use high-contrast white text by default.
+              Buttons/links inside can still override on hover but start white. */}
+          <div className="flex items-center *:text-white *:hover:text-[var(--color-text)]">
+            {right}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -61,7 +76,7 @@ export default function BentoGrid() {
   const pillWhiteOutline =
     "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // for gradient cards
   const pillOnGradientHeader =
-    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // buttons inside gradient headers
+    "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]"; // buttons inside gradient headers (kept)
   const pillOnPlain =
     "bg-blue-50 text-primary hover:bg-primary hover:text-white"; // unchanged for body areas on plain cards
 
