@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * PUBLIC_INTERFACE
@@ -6,25 +6,16 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  * Four-step wizard with validation, clickable progress stepper,
  * review with per-section edit/save, and consent-gated submission.
  *
- * Strong isolation for typing:
- * NOTE:
- * - Inputs use value={data.field} directly (raw), never derived/computed.
- * - No text transforms applied to input values; casing only via label styles.
- * - Avoid using key props that change with state for inputs/parents; nothing that would remount onChange.
- * - Validation/progress recompute deferred until blur or 300ms after typing stops.
- * - Stepper uses cached validity; clicking is disabled while typing.
- * 1) Inputs bind to raw state only; no derived/computed value bindings.
- * 2) onChange uses functional setState: prev => ({ ...prev, field: value }).
- * 3) No dynamic key props on inputs/containers tied to value/state that could remount.
- * 4) Validation/progress computation is frozen during typing and only refreshed onBlur or trailing debounce (300ms).
- * 5) Stepper consumes cached validity updated post-typing; no validation during render.
- * 6) No heavy effects on value changes (no scrollIntoView/analytics).
- * 7) Hard guard: while any input is focused (isTyping), no validation/progress recompute runs; runs on blur/Next/Save.
- * 8) Includes a console-based typing harness to simulate typing sentences across fields.
- * 9) Ocean Professional styling and business rules preserved; Next/Submit gating occurs onBlur/Next/Save/Submit only.
+ * Anti-remount and focus-stability guarantees:
+ * - No dynamic key props on inputs or their parents tied to value/validation.
+ * - Steps/components are stable; no conditional wrappers keyed by validity/progress.
+ * - Inputs are fully controlled from raw state; onChange uses functional updates.
+ * - Validations run only onBlur/Next/Save/Submit or trailing debounce; not during typing.
+ * - Stepper uses memoized validity snapshots so it never triggers remounts while typing.
+ * - Handlers are memoized with useCallback to avoid new function props each render.
  */
 export default function FormWizard() {
-  // Steps metadata (static; no dynamic keys)
+  // Steps metadata (static; stable keys)
   const steps = useMemo(
     () => [
       { key: 1, label: "Account" },
@@ -69,38 +60,42 @@ export default function FormWizard() {
   const [editingSection, setEditingSection] = useState(null);
 
   // Utility: email regex
-  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const isValidEmail = useCallback((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), []);
 
   // PUBLIC_INTERFACE
   // Step validation: runs only when explicitly invoked (onBlur/Next/Save/Submit)
-  const validateStep = (targetStep = step, persistErrors = true) => {
-    const e = {};
-    if (targetStep === 1) {
-      if (!data.username.trim()) e.username = "Username is required";
-      if (data.password.length < 8) e.password = "Password must be at least 8 characters";
-      if (data.confirm !== data.password) e.confirm = "Passwords do not match";
-    } else if (targetStep === 2) {
-      if (!data.firstName.trim()) e.firstName = "First name is required";
-      if (!data.lastName.trim()) e.lastName = "Last name is required";
-      if (!isValidEmail(data.email)) e.email = "Enter a valid email address";
-    } else if (targetStep === 3) {
-      if (!data.topic) e.topic = "Please select a topic";
-      if (!["daily", "weekly", "monthly"].includes(data.delivery)) {
-        e.delivery = "Select a delivery frequency";
+  const validateStep = useCallback(
+    (targetStep = step, persistErrors = true) => {
+      const e = {};
+      if (targetStep === 1) {
+        if (!data.username.trim()) e.username = "Username is required";
+        if (data.password.length < 8) e.password = "Password must be at least 8 characters";
+        if (data.confirm !== data.password) e.confirm = "Passwords do not match";
+      } else if (targetStep === 2) {
+        if (!data.firstName.trim()) e.firstName = "First name is required";
+        if (!data.lastName.trim()) e.lastName = "Last name is required";
+        if (!isValidEmail(data.email)) e.email = "Enter a valid email address";
+      } else if (targetStep === 3) {
+        if (!data.topic) e.topic = "Please select a topic";
+        if (!["daily", "weekly", "monthly"].includes(data.delivery)) {
+          e.delivery = "Select a delivery frequency";
+        }
+      } else if (targetStep === 4) {
+        if (!data.consent) e.consent = "You must provide consent before submitting";
       }
-    } else if (targetStep === 4) {
-      if (!data.consent) e.consent = "You must provide consent before submitting";
-    }
-    if (persistErrors) setErrors(e);
-    return Object.keys(e).length === 0;
-  };
+      if (persistErrors) setErrors(e);
+      return Object.keys(e).length === 0;
+    },
+    [data, step, isValidEmail]
+  );
 
   /**
    * Validity snapshot
    * While typing, we serve the last cached snapshot to prevent any recompute during keystrokes.
    */
   const lastValidityRef = useRef({ s1: false, s2: false, s3: false });
-  const computeS1 = () => {
+
+  const computeS1 = useCallback(() => {
     const u = data.username;
     const p = data.password;
     const c = data.confirm;
@@ -108,8 +103,9 @@ export default function FormWizard() {
     if (!p || p.length < 8) return false;
     if (c !== p) return false;
     return true;
-  };
-  const computeS2 = () => {
+  }, [data.username, data.password, data.confirm]);
+
+  const computeS2 = useCallback(() => {
     const f = data.firstName;
     const l = data.lastName;
     const e = data.email;
@@ -117,14 +113,15 @@ export default function FormWizard() {
     if (!l || !l.trim()) return false;
     if (!e) return false;
     return isValidEmail(e);
-  };
-  const computeS3 = () => {
+  }, [data.firstName, data.lastName, data.email, isValidEmail]);
+
+  const computeS3 = useCallback(() => {
     const t = data.topic;
     const d = data.delivery;
     if (!t) return false;
     if (!["daily", "weekly", "monthly"].includes(d)) return false;
     return true;
-  };
+  }, [data.topic, data.delivery]);
 
   // Recompute only when not typing; otherwise, serve last snapshot
   const step1Valid = useMemo(() => {
@@ -132,19 +129,21 @@ export default function FormWizard() {
     const v = computeS1();
     lastValidityRef.current.s1 = v;
     return v;
-  }, [data.username, data.password, data.confirm]);
+  }, [computeS1, data.username, data.password, data.confirm]);
+
   const step2Valid = useMemo(() => {
     if (isTypingRef.current) return lastValidityRef.current.s2;
     const v = computeS2();
     lastValidityRef.current.s2 = v;
     return v;
-  }, [data.firstName, data.lastName, data.email]);
+  }, [computeS2, data.firstName, data.lastName, data.email]);
+
   const step3Valid = useMemo(() => {
     if (isTypingRef.current) return lastValidityRef.current.s3;
     const v = computeS3();
     lastValidityRef.current.s3 = v;
     return v;
-  }, [data.topic, data.delivery]);
+  }, [computeS3, data.topic, data.delivery]);
 
   // Progress percentage from cached validity only
   const percentComplete = useMemo(() => {
@@ -165,88 +164,101 @@ export default function FormWizard() {
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [data, step]);
+  }, [data, step, validateStep]);
 
   // Step navigation: backward free; forward requires prior steps valid
-  const goToStep = (target) => {
-    if (isTypingRef.current) return; // hard guard against focus stealing
-    if (target < step) {
+  const goToStep = useCallback(
+    (target) => {
+      if (isTypingRef.current) return; // guard against focus stealing
+      if (target < step) {
+        setStep(target);
+        setEditingSection(null);
+        setErrors({});
+        return;
+      }
+      for (let i = 1; i < target; i++) {
+        const ok = validateStep(i, true);
+        if (!ok) {
+          setStep(i);
+          return;
+        }
+      }
       setStep(target);
       setEditingSection(null);
       setErrors({});
-      return;
-    }
-    for (let i = 1; i < target; i++) {
-      const ok = validateStep(i, true);
-      if (!ok) {
-        setStep(i);
-        return;
-      }
-    }
-    setStep(target);
-    setEditingSection(null);
-    setErrors({});
-  };
+    },
+    [step, validateStep]
+  );
 
-  const next = () => {
-    if (isTypingRef.current) return; // while typing, do nothing
+  const next = useCallback(() => {
+    if (isTypingRef.current) return;
     if (validateStep(step, true)) setStep((s) => Math.min(4, s + 1));
-  };
-  const prev = () => {
+  }, [step, validateStep]);
+
+  const prev = useCallback(() => {
     if (isTypingRef.current) return;
     setStep((s) => Math.max(1, s - 1));
-  };
+  }, []);
 
   // Helpers for field changes (functional updates, raw values)
-  const markTyping = () => {
+  const markTyping = useCallback(() => {
     isTypingRef.current = true;
     if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
     typingStopTimerRef.current = setTimeout(() => {
       isTypingRef.current = false;
     }, 300);
-  };
+  }, []);
 
-  const onChange = (field) => (e) => {
-    const value =
-      e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
-    markTyping();
-    setData((prev) => ({ ...prev, [field]: value }));
-    pendingFieldRef.current = field; // schedule validation after typing settles
-  };
+  const onChange = useCallback(
+    (field) => (e) => {
+      const value = e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
+      markTyping();
+      setData((prev) => ({ ...prev, [field]: value }));
+      pendingFieldRef.current = field; // schedule validation after typing settles
+    },
+    [markTyping]
+  );
 
-  const onFocus = (field) => () => {
+  const onFocus = useCallback((field) => () => {
     focusedFieldRef.current = field;
     isTypingRef.current = true; // freeze visuals immediately on focus
-  };
+  }, []);
 
-  const onBlurField = (stepForField) => () => {
-    focusedFieldRef.current = null;
-    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
-    isTypingRef.current = false; // allow recompute
-    validateStep(stepForField, true); // validate on blur
-  };
+  const onBlurField = useCallback(
+    (stepForField) => () => {
+      focusedFieldRef.current = null;
+      if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+      isTypingRef.current = false; // allow recompute
+      validateStep(stepForField, true); // validate on blur
+    },
+    [validateStep]
+  );
 
   // Review edit actions
-  const startEdit = (section) => {
-    if (isTypingRef.current) return;
-    setEditingSection(section);
-    setErrors({});
-    setStep(section);
-  };
-  const saveFromEdit = () => {
+  const startEdit = useCallback(
+    (section) => {
+      if (isTypingRef.current) return;
+      setEditingSection(section);
+      setErrors({});
+      setStep(section);
+    },
+    []
+  );
+
+  const saveFromEdit = useCallback(() => {
     if (isTypingRef.current) return;
     const ok = validateStep(step, true);
     if (!ok) return;
     setEditingSection(null);
     setStep(4);
     setErrors({});
-  };
+  }, [step, validateStep]);
 
   // Shared UI tokens
   const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
-  const Stepper = () => (
+  const Stepper = useCallback(() => (
     <div className="mb-5">
       <div className="flex items-center justify-between gap-2">
         {steps.map((s) => {
@@ -302,10 +314,10 @@ export default function FormWizard() {
         <div className="mt-1.5 text-right text-xs text-gray-600">{percentComplete}% complete</div>
       </div>
     </div>
-  );
+  ), [goToStep, headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]);
 
-  // Step sections (inputs: controlled raw, no value transforms; validation only onBlur/debounced)
-  const Step1 = () => (
+  // Step sections (stable, controlled inputs; validation onBlur/debounced)
+  const Step1 = useCallback(() => (
     <section aria-label="Account details" className="space-y-3">
       <div>
         <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-username">
@@ -357,9 +369,9 @@ export default function FormWizard() {
         {errors.confirm && <p className="text-xs text-red-600 mt-1">{errors.confirm}</p>}
       </div>
     </section>
-  );
+  ), [data.confirm, data.password, data.username, errors.confirm, errors.password, errors.username, onBlurField, onChange, onFocus]);
 
-  const Step2 = () => (
+  const Step2 = useCallback(() => (
     <section aria-label="Profile details" className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
@@ -411,9 +423,9 @@ export default function FormWizard() {
         {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
       </div>
     </section>
-  );
+  ), [data.email, data.firstName, data.lastName, errors.email, errors.firstName, errors.lastName, onBlurField, onChange, onFocus]);
 
-  const Step3 = () => (
+  const Step3 = useCallback(() => (
     <section aria-label="Preferences" className="space-y-4">
       <div>
         <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-topic">
@@ -486,9 +498,9 @@ export default function FormWizard() {
         />
       </div>
     </section>
-  );
+  ), [data.delivery, data.interest, data.topic, errors.delivery, errors.topic, onBlurField, onChange, onFocus]);
 
-  const Review = () => (
+  const Review = useCallback(() => (
     <section aria-label="Review" className="space-y-4">
       <div className="rounded-lg border border-gray-200">
         <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
@@ -584,10 +596,10 @@ export default function FormWizard() {
         {errors.consent && <p className="text-xs text-red-600 mt-1">{errors.consent}</p>}
       </div>
     </section>
-  );
+  ), [data.consent, data.email, data.firstName, data.interest, data.lastName, data.password, data.topic, data.username, errors.consent, headerGradient, startEdit, onBlurField, onChange, onFocus]);
 
   // Footer controls
-  const Footer = () => (
+  const Footer = useCallback(() => (
     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
       <button
         className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
@@ -637,24 +649,21 @@ export default function FormWizard() {
         )}
       </div>
     </div>
-  );
+  ), [editingSection, next, prev, step, validateStep, data.consent]);
 
   // PUBLIC_INTERFACE
   // Only enable Next if current step valid (uses cached snapshot; no recompute while typing)
-  function canProceed() {
+  const canProceed = useCallback(() => {
     if (step === 1) return step1Valid;
     if (step === 2) return step2Valid;
     if (step === 3) return step3Valid;
     return true;
-  }
+  }, [step, step1Valid, step2Valid, step3Valid]);
 
-  // Console-based typing harness to verify continuous typing responsiveness
-  // Safe no-op in production; just logs.
+  // Console-based typing harness (disabled by default)
   useEffect(() => {
-    // simulate harness usage flag (disabled by default)
     const ENABLE_HARNESS = false;
     if (!ENABLE_HARNESS) return;
-
     const simulateTyping = async () => {
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       const type = async (field, text) => {
@@ -663,28 +672,22 @@ export default function FormWizard() {
           await wait(20);
         }
       };
-      console.log("[Harness] Start typing test...");
       await type("username", "test user full sentence");
       await type("password", "password1234");
       await type("confirm", "password1234");
-      console.log("[Harness] Step 1 complete:", { username: data.username.length, password: data.password.length });
       setStep(2);
       await wait(50);
       await type("firstName", "Jane Continuous");
       await type("lastName", "Doe Typing");
       await type("email", "jane.doe@example.com");
-      console.log("[Harness] Step 2 complete:", { firstName: data.firstName.length, lastName: data.lastName.length });
       setStep(3);
       await wait(50);
       setData((prev) => ({ ...prev, topic: "engineering" }));
       await type("interest", "I love building smooth UIs without lag.");
-      console.log("[Harness] Step 3 complete:", { interest: data.interest.length });
       setStep(4);
-      console.log("[Harness] Done.");
     };
-
     simulateTyping();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className="surface p-4 md:p-5" role="region" aria-label="Form Wizard">
