@@ -16,7 +16,7 @@ export default function Breadcrumbs() {
   const crumbs = ["Home", "Components", "Forms", "Wizard"];
   const last = crumbs.length - 1;
 
-  // Chevron separator tuned to screenshot (16px viewport, 2px stroke)
+  // Chevron separator tuned to screenshot (precise: 14x14-16x16 area, 2px stroke, neutral color)
   const Chevron = ({ ariaHidden = true }) => (
     <svg
       width="16"
@@ -38,7 +38,7 @@ export default function Breadcrumbs() {
   );
 
   // PUBLIC_INTERFACE
-  // A gradient underline controller that toggles with data-underline state on the parent link.
+  // A gradient underline bar that appears on hover/focus of a link without causing layout shift.
   function GradientUnderline({ parentRef }) {
     const spanRef = useRef(null);
     useEffect(() => {
@@ -53,6 +53,7 @@ export default function Breadcrumbs() {
       mo.observe(parent, { attributes: true, attributeFilter: ["data-underline"] });
       return () => mo.disconnect();
     }, [parentRef]);
+
     return (
       <span
         ref={spanRef}
@@ -60,54 +61,55 @@ export default function Breadcrumbs() {
         className="pointer-events-none absolute left-0 right-0"
         style={{
           bottom: 0,
-          height: 3, // thicker underline for stronger visual weight
-          transform: "translateY(4px)", // emulate larger underline-offset while avoiding layout shift
+          height: 3.5, // slightly thicker as per latest screenshot
+          transform: "translateY(5px)", // emulate underline offset precisely
           backgroundImage:
             "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
           backgroundRepeat: "no-repeat",
           backgroundSize: "100% 100%",
           opacity: 0,
           transition: "opacity 140ms ease",
+          borderRadius: 2,
         }}
       />
     );
   }
 
   // PUBLIC_INTERFACE
-  // Renders a single crumb with accessible focus ring on links and gradient text on current item.
+  // Single crumb renderer: links have darker color + thick gradient underline; current item has gradient-filled text.
   function Crumb({ label, isLast }) {
-    // Typography tokens per screenshot
+    // Base typography adjusted to match screenshot (compact, uppercase labels)
     const baseType =
-      "text-[13px] sm:text-[14px] leading-[1.35] tracking-[0.02em]"; // tighter leading, slight letter-spacing
+      "text-[13px] sm:text-[14px] leading-[1.3] tracking-[0.02em]";
 
-    // Link ref to control the gradient underline element
     const linkRef = useRef(null);
 
     const linkClasses = [
       baseType,
-      "font-semibold", // slightly bolder for links in screenshot
+      "font-semibold",
       "relative",
-      "px-0.5 py-[3px] rounded-[8px]", // pill-y focus target inside row
-      "text-[#1E3A8A]", // darker blue (a bit darker than #1E40AF visually)
-      // Accessible focus-visible ring with white offset on card surface
+      "px-0.5 py-[3px] rounded-[8px]",
+      // darker link color than before for stricter fidelity
+      "text-[#18307A]",
+      // visible focus ring with offset matching white pill container
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-white",
       "transition-colors",
     ].join(" ");
 
     const linkStyle = {
       textDecorationLine: "none",
-      textDecorationThickness: "3px",
+      textDecorationThickness: "4px",
       textDecorationColor: "transparent",
     };
 
     const currentClasses = [
       "inline-flex items-center",
-      "font-extrabold", // current item appears the strongest
+      "font-extrabold",
       baseType,
     ].join(" ");
 
     const currentStyle = {
-      color: "#1840a0", // fallback
+      color: "#1840a0", // fallback color if gradient text not supported
       backgroundImage:
         "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
       backgroundClip: "text",
@@ -143,40 +145,33 @@ export default function Breadcrumbs() {
 
   return (
     <nav aria-label="Breadcrumb">
-      {/* Card/pill container: match screenshot’s shape, border, shadow, padding */}
+      {/* Pill/card container with exact border, radius, shadow, and padding per screenshot */}
       <div
         className={[
           "bg-white",
-          "rounded-full", // pill container per screenshot
+          "rounded-full",
           "border border-gray-200",
-          "shadow-[0_6px_20px_rgba(0,0,0,0.08)]", // soft but present
-          "inline-block", // hug content width
+          "shadow-[0_8px_22px_rgba(0,0,0,0.08),_0_1px_2px_rgba(0,0,0,0.04)]",
+          "inline-block",
         ].join(" ")}
         style={{
-          // Slight internal vertical density; screenshot shows compact pill
-          padding: "10px 14px", // ≈ px-3.5 py-2.5 but exact in px
+          padding: "9px 16px", // precise internal density observed
         }}
       >
         <ol className="flex items-center">
           {crumbs.map((label, i) => {
             const isLast = i === last;
             return (
-              <li
-                key={`${label}-${i}`}
-                className="flex items-center"
-                style={{
-                  // Tighten horizontal rhythm to match screenshot
-                  // Space is applied via separator wrapper; links have small internal padding already
-                }}
-              >
+              <li key={`${label}-${i}`} className="flex items-center">
                 <Crumb label={label} isLast={isLast} />
                 {i < last && (
                   <span
-                    className="select-none inline-flex items-center justify-center text-slate-400/80"
+                    className="select-none inline-flex items-center justify-center text-slate-400"
                     aria-hidden="true"
                     style={{
-                      marginLeft: 10,
-                      marginRight: 10, // precise chevron spacing
+                      marginLeft: 12, // exact chevron spacing
+                      marginRight: 12,
+                      color: "rgba(100,116,139,0.9)", // slightly darker neutral
                     }}
                   >
                     <Chevron />
