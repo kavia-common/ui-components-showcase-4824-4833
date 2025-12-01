@@ -10,30 +10,27 @@ import React from "react";
  */
 export default function BentoGrid() {
   /**
-   * Tile map preserved. Variants indicate visual styling only.
+   * Tile map updated: removed Clubs, Events, and News.
+   * Spans are kept to maintain a clean flow across xl/lg/md/sm without gaps.
    */
   const tiles = [
+    // Row A
     { key: "hero", title: "Dixon’s Value Proposition (EVP)", variant: "gradient-hero", spans: "col-span-12 xl:col-span-8", minH: "min-h-[170px]" },
     { key: "meetings", title: "Meetings", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
 
+    // Row B
     { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 xl:col-span-6", minH: "min-h-[180px]" },
     { key: "ceo", title: "Insights from CEO", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
     { key: "ld", title: "L&D Insights", variant: "gradient-ld", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
 
+    // Row C
     { key: "tools", title: "Toolshelf", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
     { key: "division", title: "Division", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
     { key: "latest", title: "Latest Update", variant: "tinted-blue", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
     { key: "csr", title: "CSR@TDI", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
-
-    { key: "clubs", title: "Clubs", variant: "plain", spans: "col-span-12 md:col-span-6 xl:col-span-4", minH: "min-h-[170px]" },
-    { key: "events", title: "Events", variant: "plain", spans: "col-span-12 md:col-span-6 xl:col-span-4", minH: "min-h-[170px]" },
-    { key: "news", title: "News", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
   ];
 
   // Shared, theme-aligned styles
-  // - Rounded corners consistent: rounded-2xl
-  // - Shadows subtle: shadow-soft, hover:shadow-xl with slight lift
-  // - Focus ring uses primary (blue)
   const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60";
   const cardBase =
     `rounded-2xl shadow-soft transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5 ${focusRing}`;
@@ -54,7 +51,6 @@ export default function BentoGrid() {
           role="region"
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} text-white ${cardBase} p-6 relative overflow-hidden`}
-          // Ocean gradient: from-blue-500/10 to-gray-50 layered on brand purple retained as decorative richness
           style={{
             background:
               "var(--tile-hero-gradient, linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%))",
@@ -258,69 +254,6 @@ export default function BentoGrid() {
           <div className="mt-3 grid grid-cols-2 gap-3 items-center justify-items-center">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-10 w-20 bg-gray-100 rounded-md" aria-hidden="true" />
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (t.key === "clubs") {
-      return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="View all clubs">
-              View All
-            </a>
-          </div>
-          <div className="mt-3 grid grid-cols-5 gap-3">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-[11px] text-slate-500">
-                C{i + 1}
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    if (t.key === "events") {
-      return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="Know more events">
-              Know More
-            </a>
-          </div>
-          <div className="mt-3 w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-800 flex items-end p-3">
-            <div className="text-white text-sm">Townhall • Dec 12</div>
-          </div>
-        </section>
-      );
-    }
-
-    if (t.key === "news") {
-      return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
-          <div className={headerClass}>
-            <h3 id={`tile-${t.key}-title`} className={titleClass}>
-              {t.title}
-            </h3>
-            <a href="#" className={pillLink} aria-label="View all news">
-              View All
-            </a>
-          </div>
-          <div className="mt-3 flex gap-3 overflow-x-auto snap-x snap-mandatory">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="min-w-[140px] snap-start rounded-lg bg-surface shadow-sm overflow-hidden">
-                <div className="h-20 bg-gray-200" />
-                <div className="p-2 text-sm">Headline {i + 1}</div>
-              </div>
             ))}
           </div>
         </section>
