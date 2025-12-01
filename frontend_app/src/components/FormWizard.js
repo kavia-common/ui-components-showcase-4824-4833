@@ -6,13 +6,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
  * Four-step wizard with validation, clickable progress stepper,
  * review with per-section edit/save, and consent-gated submission.
  *
- * Anti-remount and focus-stability guarantees:
- * - No dynamic key props on inputs or their parents tied to value/validation.
- * - Steps/components are stable; no conditional wrappers keyed by validity/progress.
- * - Inputs are fully controlled from raw state; onChange uses functional updates.
- * - Validations run only onBlur/Next/Save/Submit or trailing debounce; not during typing.
- * - Stepper uses memoized validity snapshots so it never triggers remounts while typing.
- * - Handlers are memoized with useCallback to avoid new function props each render.
+ * Hard stabilization patch:
+ * - No dynamic keys on inputs/ancestors; constant ids.
+ * - Render ALL step panels persistently and toggle visibility via CSS (hidden) to avoid unmounts.
+ * - Stepper isolated with React.memo-equivalent via useCallback + stable deps; moved outside panels subtree.
+ * - Controlled inputs bound to raw state; onChange uses functional setState with no transforms.
+ * - Handlers memoized with useCallback; no state updates during render.
+ * - Validations only onBlur/Next/Save/Submit or trailing debounce after typing stops.
+ * - Focus-stability guard: remember lastFocusedField and refocus if DOM focus moves unintentionally.
+ * - Keeps Ocean Professional styling and gating rules intact.
  */
 export default function FormWizard() {
   // Steps metadata (static; stable keys)
@@ -53,8 +55,20 @@ export default function FormWizard() {
   const isTypingRef = useRef(false);
   const typingStopTimerRef = useRef(null);
 
-  // Track focused field to better manage onBlur validations
-  const focusedFieldRef = useRef(null);
+  // Focus tracking + refs for focus-stability guard
+  const lastFocusedFieldRef = useRef(null);
+  const inputRefs = useRef({
+    username: null,
+    password: null,
+    confirm: null,
+    firstName: null,
+    lastName: null,
+    email: null,
+    topic: null,
+    delivery: null, // radio group first element will be stored
+    interest: null,
+    consent: null,
+  });
 
   // When editing within Review, track which section is in edit mode (1,2,3) or null
   const [editingSection, setEditingSection] = useState(null);
@@ -219,14 +233,17 @@ export default function FormWizard() {
     [markTyping]
   );
 
-  const onFocus = useCallback((field) => () => {
-    focusedFieldRef.current = field;
+  const onFocus = useCallback((field) => (e) => {
+    lastFocusedFieldRef.current = field;
     isTypingRef.current = true; // freeze visuals immediately on focus
+    // record ref if not present (esp. radio group/checkbox)
+    if (inputRefs.current[field] == null) {
+      inputRefs.current[field] = e?.currentTarget ?? null;
+    }
   }, []);
 
   const onBlurField = useCallback(
     (stepForField) => () => {
-      focusedFieldRef.current = null;
       if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
       isTypingRef.current = false; // allow recompute
       validateStep(stepForField, true); // validate on blur
@@ -258,6 +275,7 @@ export default function FormWizard() {
   const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
+  // Stepper isolated (does not live under step content subtree)
   const Stepper = useCallback(() => (
     <div className="mb-5">
       <div className="flex items-center justify-between gap-2">
@@ -270,7 +288,7 @@ export default function FormWizard() {
             (s.key === 3 && step3Valid);
           return (
             <button
-              key={s.key}
+              key={`stepper-${s.key}`}
               type="button"
               onMouseDown={(e) => {
                 if (isTypingRef.current) e.preventDefault();
@@ -316,340 +334,33 @@ export default function FormWizard() {
     </div>
   ), [goToStep, headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]);
 
-  // Step sections (stable, controlled inputs; validation onBlur/debounced)
-  const Step1 = useCallback(() => (
-    <section aria-label="Account details" className="space-y-3">
-      <div>
-        <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-username">
-          Username
-        </label>
-        <input
-          id="fw-username"
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-          value={data.username}
-          onFocus={onFocus("username")}
-          onChange={onChange("username")}
-          onBlur={onBlurField(1)}
-          autoComplete="username"
-        />
-        {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
-      </div>
+  // Input refs setter
+  const setInputRef = useCallback((field) => (el) => {
+    if (el) inputRefs.current[field] = el;
+  }, []);
 
-      <div>
-        <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-password">
-          Password
-        </label>
-        <input
-          id="fw-password"
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-          value={data.password}
-          onFocus={onFocus("password")}
-          onChange={onChange("password")}
-          onBlur={onBlurField(1)}
-          type="password"
-          autoComplete="new-password"
-        />
-        {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
-      </div>
-
-      <div>
-        <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-confirm">
-          Confirm Password
-        </label>
-        <input
-          id="fw-confirm"
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-          value={data.confirm}
-          onFocus={onFocus("confirm")}
-          onChange={onChange("confirm")}
-          onBlur={onBlurField(1)}
-          type="password"
-          autoComplete="new-password"
-        />
-        {errors.confirm && <p className="text-xs text-red-600 mt-1">{errors.confirm}</p>}
-      </div>
-    </section>
-  ), [data.confirm, data.password, data.username, errors.confirm, errors.password, errors.username, onBlurField, onChange, onFocus]);
-
-  const Step2 = useCallback(() => (
-    <section aria-label="Profile details" className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-first">
-            First Name
-          </label>
-          <input
-            id="fw-first"
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-            value={data.firstName}
-            onFocus={onFocus("firstName")}
-            onChange={onChange("firstName")}
-            onBlur={onBlurField(2)}
-            autoComplete="given-name"
-          />
-          {errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
-        </div>
-        <div>
-          <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-last">
-            Last Name
-          </label>
-          <input
-            id="fw-last"
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-            value={data.lastName}
-            onFocus={onFocus("lastName")}
-            onChange={onChange("lastName")}
-            onBlur={onBlurField(2)}
-            autoComplete="family-name"
-          />
-          {errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-email">
-          Email
-        </label>
-        <input
-          id="fw-email"
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-          value={data.email}
-          onFocus={onFocus("email")}
-          onChange={onChange("email")}
-          onBlur={onBlurField(2)}
-          type="email"
-          autoComplete="email"
-        />
-        {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
-      </div>
-    </section>
-  ), [data.email, data.firstName, data.lastName, errors.email, errors.firstName, errors.lastName, onBlurField, onChange, onFocus]);
-
-  const Step3 = useCallback(() => (
-    <section aria-label="Preferences" className="space-y-4">
-      <div>
-        <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-topic">
-          Topic
-        </label>
-        <select
-          id="fw-topic"
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring bg-white"
-          value={data.topic}
-          onFocus={onFocus("topic")}
-          onChange={onChange("topic")}
-          onBlur={onBlurField(3)}
-        >
-          <option value="">Select a topic</option>
-          <option value="design">Design</option>
-          <option value="engineering">Engineering</option>
-          <option value="product">Product</option>
-          <option value="marketing">Marketing</option>
-        </select>
-        {errors.topic && <p className="text-xs text-red-600 mt-1">{errors.topic}</p>}
-      </div>
-
-      <fieldset className="rounded-lg border border-gray-200 p-3">
-        <legend className="px-1 text-sm font-semibold" style={{ textTransform: "uppercase" }}>
-          Delivery Frequency
-        </legend>
-        <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {[
-            { value: "daily", label: "Daily" },
-            { value: "weekly", label: "Weekly" },
-            { value: "monthly", label: "Monthly" },
-          ].map((opt) => (
-            <label
-              key={opt.value}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer ${
-                data.delivery === opt.value ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <input
-                type="radio"
-                name="delivery"
-                value={opt.value}
-                checked={data.delivery === opt.value}
-                onFocus={onFocus("delivery")}
-                onChange={onChange("delivery")}
-                onBlur={onBlurField(3)}
-                className="accent-blue-600"
-              />
-              <span className="text-sm font-medium" style={{ textTransform: "uppercase" }}>
-                {opt.label}
-              </span>
-            </label>
-          ))}
-        </div>
-        {errors.delivery && <p className="text-xs text-red-600 mt-2">{errors.delivery}</p>}
-      </fieldset>
-
-      <div>
-        <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-interest">
-          Interest (optional)
-        </label>
-        <input
-          id="fw-interest"
-          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-          value={data.interest}
-          onFocus={onFocus("interest")}
-          onChange={onChange("interest")}
-          onBlur={onBlurField(3)}
-          placeholder="Tell us more about your interests"
-        />
-      </div>
-    </section>
-  ), [data.delivery, data.interest, data.topic, errors.delivery, errors.topic, onBlurField, onChange, onFocus]);
-
-  const Review = useCallback(() => (
-    <section aria-label="Review" className="space-y-4">
-      <div className="rounded-lg border border-gray-200">
-        <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
-          <span style={{ textTransform: "uppercase" }}>Account</span>
-        </div>
-        <div className="p-3 text-sm text-gray-800">
-          <p>
-            <strong>Username:</strong> {data.username || "—"}
-          </p>
-          <p>
-            <strong>Password:</strong> {data.password ? "••••••••" : "—"}
-          </p>
-          <button
-            type="button"
-            className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring"
-            style={{ background: headerGradient }}
-            onClick={() => startEdit(1)}
-          >
-            Edit
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200">
-        <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
-          <span style={{ textTransform: "uppercase" }}>Profile</span>
-        </div>
-        <div className="p-3 text-sm text-gray-800">
-          <p>
-            <strong>First Name:</strong> {data.firstName || "—"}
-          </p>
-          <p>
-            <strong>Last Name:</strong> {data.lastName || "—"}
-          </p>
-          <p>
-            <strong>Email:</strong> {data.email || "—"}
-          </p>
-          <button
-            type="button"
-            className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring"
-            style={{ background: headerGradient }}
-            onClick={() => startEdit(2)}
-          >
-            Edit
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200">
-        <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
-          <span style={{ textTransform: "uppercase" }}>Preferences</span>
-        </div>
-        <div className="p-3 text-sm text-gray-800">
-          <p>
-            <strong>Topic:</strong> {data.topic || "—"}
-          </p>
-          <p>
-            <strong>Delivery:</strong> {data.delivery || "—"}
-          </p>
-          <p>
-            <strong>Interest:</strong> {data.interest || "—"}
-          </p>
-          <button
-            type="button"
-            className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring"
-            style={{ background: headerGradient }}
-            onClick={() => startEdit(3)}
-          >
-            Edit
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 p-3">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={data.consent}
-            onFocus={onFocus("consent")}
-            onChange={onChange("consent")}
-            onBlur={onBlurField(4)}
-            aria-describedby="fw-consent-help"
-          />
-        </label>
-        <div className="mt-1">
-          <span className="text-sm" style={{ textTransform: "uppercase" }}>
-            I consent to submit this information
-          </span>
-        </div>
-        <p id="fw-consent-help" className="text-xs text-gray-600 mt-1">
-          Submitting is enabled only when consent is checked.
-        </p>
-        {errors.consent && <p className="text-xs text-red-600 mt-1">{errors.consent}</p>}
-      </div>
-    </section>
-  ), [data.consent, data.email, data.firstName, data.interest, data.lastName, data.password, data.topic, data.username, errors.consent, headerGradient, startEdit, onBlurField, onChange, onFocus]);
-
-  // Footer controls
-  const Footer = useCallback(() => (
-    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <button
-        className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
-        onClick={prev}
-        disabled={step === 1}
-      >
-        <span style={{ textTransform: "uppercase" }}>Back</span>
-      </button>
-
-      <div className="flex items-center gap-2">
-        {editingSection ? (
-          <>
-            <button className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={saveFromEdit}>
-              <span style={{ textTransform: "uppercase" }}>Save</span>
-            </button>
-            <button
-              className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
-              onClick={() => {
-                setEditingSection(null);
-                setStep(4);
-                setErrors({});
-              }}
-            >
-              <span style={{ textTransform: "uppercase" }}>Cancel</span>
-            </button>
-          </>
-        ) : step < 4 ? (
-          <button
-            className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={next}
-            disabled={!canProceed()}
-          >
-            <span style={{ textTransform: "uppercase" }}>Next</span>
-          </button>
-        ) : (
-          <button
-            className="rounded-lg bg-green-600 text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => {
-              if (validateStep(4, true)) {
-                alert("Submitted! Thank you.");
-              }
-            }}
-            disabled={!data.consent}
-          >
-            <span style={{ textTransform: "uppercase" }}>Submit</span>
-          </button>
-        )}
-      </div>
-    </div>
-  ), [editingSection, next, prev, step, validateStep, data.consent]);
+  // Focus-stability guard: if focus jumped away unintentionally after render, restore it.
+  useEffect(() => {
+    const active = document.activeElement;
+    const last = lastFocusedFieldRef.current;
+    if (!last) return;
+    // If user is still on a field, keep it; if focus vanished or moved out while typing, restore
+    const refEl = inputRefs.current[last];
+    if (refEl && active !== refEl) {
+      // Only restore if field's value didn't change source-of-truth; we don't alter value
+      refEl.focus();
+      // Do not scroll jank
+      if (typeof refEl.setSelectionRange === "function") {
+        // keep caret at end
+        const val = refEl.value ?? "";
+        try {
+          refEl.setSelectionRange(val.length, val.length);
+        } catch {
+          /* noop */
+        }
+      }
+    }
+  });
 
   // PUBLIC_INTERFACE
   // Only enable Next if current step valid (uses cached snapshot; no recompute while typing)
@@ -689,6 +400,10 @@ export default function FormWizard() {
     simulateTyping();
   }, []);
 
+  // Shared classes for panel visibility: render all, toggle hidden via CSS
+  const panelBase = "mt-4";
+  const hiddenCls = "hidden";
+
   return (
     <section className="surface p-4 md:p-5" role="region" aria-label="Form Wizard">
       <header className="mb-4">
@@ -700,16 +415,373 @@ export default function FormWizard() {
         </p>
       </header>
 
+      {/* Stepper kept outside of step content subtree */}
       <Stepper />
 
-      <div className="mt-4">
-        {step === 1 && <Step1 />}
-        {step === 2 && <Step2 />}
-        {step === 3 && <Step3 />}
-        {step === 4 && <Review />}
+      {/* Persistently mounted panels to prevent remounts or focus loss */}
+      <div className={panelBase} aria-live="polite">
+        <section
+          id="step-panel-1"
+          aria-labelledby="step-label-1"
+          className={step === 1 ? "" : hiddenCls}
+        >
+          {/* Step 1 */}
+          <section aria-label="Account details" className="space-y-3">
+            <div>
+              <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-username">
+                Username
+              </label>
+              <input
+                id="fw-username"
+                ref={setInputRef("username")}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                value={data.username}
+                onFocus={onFocus("username")}
+                onChange={onChange("username")}
+                onBlur={onBlurField(1)}
+                autoComplete="username"
+              />
+              {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-password">
+                Password
+              </label>
+              <input
+                id="fw-password"
+                ref={setInputRef("password")}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                value={data.password}
+                onFocus={onFocus("password")}
+                onChange={onChange("password")}
+                onBlur={onBlurField(1)}
+                type="password"
+                autoComplete="new-password"
+              />
+              {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-confirm">
+                Confirm Password
+              </label>
+              <input
+                id="fw-confirm"
+                ref={setInputRef("confirm")}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                value={data.confirm}
+                onFocus={onFocus("confirm")}
+                onChange={onChange("confirm")}
+                onBlur={onBlurField(1)}
+                type="password"
+                autoComplete="new-password"
+              />
+              {errors.confirm && <p className="text-xs text-red-600 mt-1">{errors.confirm}</p>}
+            </div>
+          </section>
+        </section>
+
+        <section
+          id="step-panel-2"
+          aria-labelledby="step-label-2"
+          className={step === 2 ? "" : hiddenCls}
+        >
+          {/* Step 2 */}
+          <section aria-label="Profile details" className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-first">
+                  First Name
+                </label>
+                <input
+                  id="fw-first"
+                  ref={setInputRef("firstName")}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.firstName}
+                  onFocus={onFocus("firstName")}
+                  onChange={onChange("firstName")}
+                  onBlur={onBlurField(2)}
+                  autoComplete="given-name"
+                />
+                {errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-last">
+                  Last Name
+                </label>
+                <input
+                  id="fw-last"
+                  ref={setInputRef("lastName")}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.lastName}
+                  onFocus={onFocus("lastName")}
+                  onChange={onChange("lastName")}
+                  onBlur={onBlurField(2)}
+                  autoComplete="family-name"
+                />
+                {errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-email">
+                Email
+              </label>
+              <input
+                id="fw-email"
+                ref={setInputRef("email")}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                value={data.email}
+                onFocus={onFocus("email")}
+                onChange={onChange("email")}
+                onBlur={onBlurField(2)}
+                type="email"
+                autoComplete="email"
+              />
+              {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+            </div>
+          </section>
+        </section>
+
+        <section
+          id="step-panel-3"
+          aria-labelledby="step-label-3"
+          className={step === 3 ? "" : hiddenCls}
+        >
+          {/* Step 3 */}
+          <section aria-label="Preferences" className="space-y-4">
+            <div>
+              <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-topic">
+                Topic
+              </label>
+              <select
+                id="fw-topic"
+                ref={setInputRef("topic")}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring bg-white"
+                value={data.topic}
+                onFocus={onFocus("topic")}
+                onChange={onChange("topic")}
+                onBlur={onBlurField(3)}
+              >
+                <option value="">Select a topic</option>
+                <option value="design">Design</option>
+                <option value="engineering">Engineering</option>
+                <option value="product">Product</option>
+                <option value="marketing">Marketing</option>
+              </select>
+              {errors.topic && <p className="text-xs text-red-600 mt-1">{errors.topic}</p>}
+            </div>
+
+            <fieldset className="rounded-lg border border-gray-200 p-3">
+              <legend className="px-1 text-sm font-semibold" style={{ textTransform: "uppercase" }}>
+                Delivery Frequency
+              </legend>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  { value: "daily", label: "Daily" },
+                  { value: "weekly", label: "Weekly" },
+                  { value: "monthly", label: "Monthly" },
+                ].map((opt, i) => (
+                  <label
+                    key={`delivery-${opt.value}`}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer ${
+                      data.delivery === opt.value ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value={opt.value}
+                      checked={data.delivery === opt.value}
+                      onFocus={onFocus("delivery")}
+                      onChange={onChange("delivery")}
+                      onBlur={onBlurField(3)}
+                      className="accent-blue-600"
+                      ref={i === 0 ? setInputRef("delivery") : undefined}
+                    />
+                    <span className="text-sm font-medium" style={{ textTransform: "uppercase" }}>
+                      {opt.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {errors.delivery && <p className="text-xs text-red-600 mt-2">{errors.delivery}</p>}
+            </fieldset>
+
+            <div>
+              <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-interest">
+                Interest (optional)
+              </label>
+              <input
+                id="fw-interest"
+                ref={setInputRef("interest")}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                value={data.interest}
+                onFocus={onFocus("interest")}
+                onChange={onChange("interest")}
+                onBlur={onBlurField(3)}
+                placeholder="Tell us more about your interests"
+              />
+            </div>
+          </section>
+        </section>
+
+        <section
+          id="step-panel-4"
+          aria-labelledby="step-label-4"
+          className={step === 4 ? "" : hiddenCls}
+        >
+          {/* Review */}
+          <section aria-label="Review" className="space-y-4">
+            <div className="rounded-lg border border-gray-200">
+              <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
+                <span style={{ textTransform: "uppercase" }}>Account</span>
+              </div>
+              <div className="p-3 text-sm text-gray-800">
+                <p>
+                  <strong>Username:</strong> {data.username || "—"}
+                </p>
+                <p>
+                  <strong>Password:</strong> {data.password ? "••••••••" : "—"}
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring"
+                  style={{ background: headerGradient }}
+                  onClick={() => startEdit(1)}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200">
+              <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
+                <span style={{ textTransform: "uppercase" }}>Profile</span>
+              </div>
+              <div className="p-3 text-sm text-gray-800">
+                <p>
+                  <strong>First Name:</strong> {data.firstName || "—"}
+                </p>
+                <p>
+                  <strong>Last Name:</strong> {data.lastName || "—"}
+                </p>
+                <p>
+                  <strong>Email:</strong> {data.email || "—"}
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring"
+                  style={{ background: headerGradient }}
+                  onClick={() => startEdit(2)}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200">
+              <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
+                <span style={{ textTransform: "uppercase" }}>Preferences</span>
+              </div>
+              <div className="p-3 text-sm text-gray-800">
+                <p>
+                  <strong>Topic:</strong> {data.topic || "—"}
+                </p>
+                <p>
+                  <strong>Delivery:</strong> {data.delivery || "—"}
+                </p>
+                <p>
+                  <strong>Interest:</strong> {data.interest || "—"}
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring"
+                  style={{ background: headerGradient }}
+                  onClick={() => startEdit(3)}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 p-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  ref={setInputRef("consent")}
+                  checked={data.consent}
+                  onFocus={onFocus("consent")}
+                  onChange={onChange("consent")}
+                  onBlur={onBlurField(4)}
+                  aria-describedby="fw-consent-help"
+                />
+              </label>
+              <div className="mt-1">
+                <span className="text-sm" style={{ textTransform: "uppercase" }}>
+                  I consent to submit this information
+                </span>
+              </div>
+              <p id="fw-consent-help" className="text-xs text-gray-600 mt-1">
+                Submitting is enabled only when consent is checked.
+              </p>
+              {errors.consent && <p className="text-xs text-red-600 mt-1">{errors.consent}</p>}
+            </div>
+          </section>
+        </section>
       </div>
 
-      <Footer />
+      {/* Footer below panels */}
+      <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
+          onClick={prev}
+          disabled={step === 1}
+        >
+          <span style={{ textTransform: "uppercase" }}>Back</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          {editingSection ? (
+            <>
+              <button className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={saveFromEdit}>
+                <span style={{ textTransform: "uppercase" }}>Save</span>
+              </button>
+              <button
+                className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
+                onClick={() => {
+                  setEditingSection(null);
+                  setStep(4);
+                  setErrors({});
+                }}
+              >
+                <span style={{ textTransform: "uppercase" }}>Cancel</span>
+              </button>
+            </>
+          ) : step < 4 ? (
+            <button
+              className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={next}
+              disabled={!canProceed()}
+            >
+              <span style={{ textTransform: "uppercase" }}>Next</span>
+            </button>
+          ) : (
+            <button
+              className="rounded-lg bg-green-600 text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                if (validateStep(4, true)) {
+                  alert("Submitted! Thank you.");
+                }
+              }}
+              disabled={!data.consent}
+            >
+              <span style={{ textTransform: "uppercase" }}>Submit</span>
+            </button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
