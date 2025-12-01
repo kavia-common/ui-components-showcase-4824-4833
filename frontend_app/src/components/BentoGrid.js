@@ -258,7 +258,7 @@ export default function BentoGrid() {
         <section
           role="region"
           aria-labelledby={`tile-${t.key}-title`}
-          className={`${t.spans} ${cardPlain} p-4`}
+          className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}
         >
           <HeaderBar
             id={`tile-${t.key}-title`}
@@ -272,25 +272,35 @@ export default function BentoGrid() {
                 Know More
               </a>
             }
-            className="mb-2"
+            className="mb-1.5"
           />
-          {/* Body updated: remove one more sub-card on the right and reduce height while keeping header unchanged */}
-          <div className="grid grid-cols-12 gap-2">
-            {/* Left: main banner keeps proportion on all breakpoints */}
+          {/* Compact body: tighten gaps and constrain media height without touching header */}
+          <div className="grid grid-cols-12 gap-1.5 sm:gap-2">
+            {/* Left: main banner with a smaller visual footprint; constrain height across breakpoints */}
             <div
-              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/9] sm:aspect-[16/7] md:aspect-[16/7]"
+              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden bg-gray-100"
+              style={{
+                aspectRatio: "16 / 9",
+                maxHeight: "120px",
+                minHeight: "84px",
+              }}
               aria-hidden="true"
             />
-            {/* Right: only ONE thumbnail now; responsive with no gaps */}
+            {/* Right: single thumbnail, height matched to feel balanced */}
             <div className="col-span-12 sm:col-span-4 grid grid-rows-1">
               <div
-                className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9] sm:aspect-[16/12]"
+                className="rounded-lg overflow-hidden bg-gray-100"
+                style={{
+                  aspectRatio: "16 / 10",
+                  maxHeight: "120px",
+                  minHeight: "70px",
+                }}
                 aria-hidden="true"
               />
             </div>
           </div>
-          {/* Reduce caption spacing to tighten overall tile height */}
-          <p className="mt-0.5 text-[13px] md:text-sm text-slate-600 line-clamp-1">
+          {/* Caption: extra-tight spacing and clamp to 1 line */}
+          <p className="mt-0.5 text-[12px] sm:text-[13px] text-slate-600 line-clamp-1">
             Highlights from across the organization this week.
           </p>
         </section>
