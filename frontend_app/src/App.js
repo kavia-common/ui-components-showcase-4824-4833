@@ -106,9 +106,6 @@ function App() {
       { key: "testimonial", label: "Testimonial" },
       { key: "toast", label: "Toast" },
       { key: "pricing", label: "Pricing" },
-      { key: "contact", label: "Contact" },
-      { key: "calendar", label: "Calendar" },
-      { key: "datatable", label: "Data Table" },
       { key: "chatbot", label: "Chatbot" },
     ],
     []
@@ -119,6 +116,9 @@ function App() {
       { key: "newsletter", label: "Newsletter" },
       { key: "team", label: "Team" },
       { key: "logos", label: "Logo Clouds" },
+      { key: "contact", label: "Contact" },
+      { key: "calendar", label: "Calendar" },
+      { key: "datatable", label: "Data Table" },
     ],
     []
   );
