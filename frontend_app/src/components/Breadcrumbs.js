@@ -6,7 +6,7 @@ import React from "react";
  * Ocean Professional-styled breadcrumb navigation. Applies white surface over light canvas,
  * 1px subtle border, soft shadow, rounded-xl radius, and balanced padding (px-4 py-2.5).
  * Links use darker blue text with gradient underline on hover/active and accessible focus ring.
- * Current item is non-link, neutral/darker text with semibold weight. Separators are subtle slate chevrons.
+ * Current item is non-link with gradient-filled text and semibold weight. Separators are subtle slate chevrons.
  */
 export default function Breadcrumbs() {
   // Example path; in a real app this would be derived from the router.
@@ -39,7 +39,7 @@ export default function Breadcrumbs() {
   function Crumb({ label, isLast }) {
     const baseType = "text-[13px] sm:text-[14px] tracking-[0.01em]";
 
-    // Gradient to use for underline
+    // Gradient to use for underline and active text
     const gradient = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
     // Link styling:
@@ -69,13 +69,21 @@ export default function Breadcrumbs() {
       textDecorationLine: "none",
     };
 
-    // Current item: non-link, neutral/darker text with semibold weight
+    // Current item: non-link with gradient text fill; provide solid color fallback for older browsers.
+    // Preserve font weight and spacing, do not alter layout/padding/separators/focus ring.
     const currentClasses = [
       "inline-flex items-center",
-      "text-slate-800",
       "font-semibold",
       baseType,
     ].join(" ");
+
+    const currentStyle = {
+      color: "#1840a0", // fallback solid color for contrast
+      backgroundImage: gradient,
+      backgroundClip: "text",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    };
 
     if (!isLast) {
       return (
@@ -119,16 +127,14 @@ export default function Breadcrumbs() {
               // cleanup
               node.__mo = mo;
             }}
-            onAnimationEnd={(e) => {
-              // no-op; placeholder for future smoothing
-            }}
+            onAnimationEnd={() => {}}
           />
         </a>
       );
     }
 
     return (
-      <span aria-current="page" className={currentClasses}>
+      <span aria-current="page" className={currentClasses} style={currentStyle}>
         {label}
       </span>
     );
