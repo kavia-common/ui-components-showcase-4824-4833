@@ -156,16 +156,19 @@ export default function BentoGrid() {
           aria-labelledby={`tile-${t.key}-title`}
           className={`${t.spans} ${cardPlain} p-0 relative overflow-hidden`}
         >
+          {/* Use the same unified Header component exactly like the first grid header */}
           <Header
             id={`tile-${t.key}-title`}
             title={t.title}
             right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
           />
+          {/* Body content remains unchanged; no header overrides or duplicate containers */}
           <div className="px-4 pt-2 pb-4">
             <p className="mt-1 text-sm text-slate-700">
               Upskill with curated learning content and programs.
             </p>
           </div>
+          {/* Decorative element retained as body content; does not wrap/override header */}
           <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-slate-200" aria-hidden="true" />
         </section>
       );
