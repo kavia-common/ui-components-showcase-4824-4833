@@ -49,6 +49,7 @@ export default function ChatbotStub() {
         <input
           className="flex-1 rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           placeholder="Type your message..."
+          aria-label="Chat message"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />

@@ -12,6 +12,7 @@ import FormWizard from "./components/FormWizard";
 import Testimonial from "./components/Testimonial";
 import ToastDemo from "./components/ToastDemo";
 import { ToastProvider } from "./components/ToastProvider";
+import ChatbotFloating from "./components/ChatbotFloating";
 
 // PUBLIC_INTERFACE
 function App() {
@@ -527,6 +528,8 @@ function App() {
             </div>
           </footer>
         </main>
+        {/* Floating chatbot launcher and panel (global overlay) */}
+        <ChatbotFloating />
       </div>
     </ToastProvider>
   );
