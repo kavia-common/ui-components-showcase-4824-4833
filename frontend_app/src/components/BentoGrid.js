@@ -36,9 +36,9 @@ export default function BentoGrid() {
 
   // PUBLIC_INTERFACE
   // Returns a lighter variant of the interaction hover gradient for sub-cards.
-  // Lightened ~10% vs previous hover using brighter stops + subtle white overlay for perceived lift.
+  // Lightened baseline gradient (slightly brighter stops) used behind a semi-transparent white overlay.
   const lighterHeaderGradient =
-    "linear-gradient(45deg, #d24dbb 10%, #b35ac2 22%, #3b66cd 100%)";
+    "linear-gradient(45deg, #d758c3 10%, #bb69cb 22%, #4a73d6 100%)";
 
   // PUBLIC_INTERFACE
   // A reusable interactive wrapper that applies ONLY to actionable sub-cards/links/buttons.
@@ -47,17 +47,19 @@ export default function BentoGrid() {
     const baseStyle = {
       // No base background so layout does not shift on hover.
       background: "transparent",
-      transition: "background 240ms ease, filter 240ms ease",
+      transition: "background 260ms ease, filter 260ms ease",
       willChange: "background, filter",
     };
 
-    // Compose a lightened hover with a subtle white overlay (~10% perceived lift)
-    const hoverBackground = `linear-gradient(0deg, rgba(255,255,255,0.12), rgba(255,255,255,0.12)), ${lighterHeaderGradient}`;
+    // Increase perceived lightness by ~6–8% vs current:
+    // - Bump white overlay from 0.12 → 0.18
+    // - Slightly increase brightness and saturation to keep colors lively without blowing contrast
+    const hoverBackground = `linear-gradient(0deg, rgba(255,255,255,0.18), rgba(255,255,255,0.18)), ${lighterHeaderGradient}`;
 
     const handleEnter = (e) => {
       e.currentTarget.style.background = hoverBackground;
       // Gentle boost to maintain readable contrast on text/icons
-      e.currentTarget.style.filter = "brightness(1.04) saturate(1.03)";
+      e.currentTarget.style.filter = "brightness(1.08) saturate(1.04)";
     };
     const handleLeave = (e) => {
       e.currentTarget.style.background = "transparent";
