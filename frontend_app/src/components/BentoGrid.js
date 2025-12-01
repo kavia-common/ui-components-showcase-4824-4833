@@ -273,7 +273,7 @@ export default function BentoGrid() {
 
     if (t.key === "meetings") {
       return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-5 ${t.minH}`}>
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-5 ${t.minH} border border-gray-200`}>
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="More" className="mb-4" />
           <div className="grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
