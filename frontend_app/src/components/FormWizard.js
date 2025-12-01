@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
  *
  * Validation behavior:
  * - Show error messages only after a field is interacted with (touched or dirty).
- * - Errors disappear immediately when the value becomes valid.
+ * - Errors disappear immediately when the value becomes valid (including cross-field dependencies).
  * - Next/Back always navigate; Submit is disabled until all required fields are valid.
  * - Acknowledgement screen remains after successful submit.
  */
@@ -164,6 +164,16 @@ export default function FormWizard() {
     );
   }, [getStepErrors]);
 
+  // Keep errors state synchronized to the latest values so messages clear immediately after validity.
+  useEffect(() => {
+    const e1 = getStepErrors(1, data);
+    const e2 = getStepErrors(2, data);
+    const e3 = getStepErrors(3, data);
+    const e4 = getStepErrors(4, data);
+    const merged = { ...e1, ...e2, ...e3, ...e4 };
+    setErrors(merged);
+  }, [data, getStepErrors]);
+
   // Helpers for progress visuals
   const computeS1 = useCallback(
     () => Object.keys(getStepErrors(1)).length === 0,
@@ -217,21 +227,10 @@ export default function FormWizard() {
       markDirty(field);
       setData((prev) => {
         const next = { ...prev, [field]: value };
-        // Recompute step errors for the field's step to allow instant hide/show
-        const stepForField =
-          field === "username" || field === "password" || field === "confirm"
-            ? 1
-            : field === "firstName" || field === "lastName" || field === "email"
-            ? 2
-            : field === "topic" || field === "delivery" || field === "interest"
-            ? 3
-            : 4;
-        const stepErrors = getStepErrors(stepForField, next);
-        setErrors((prevErr) => ({ ...prevErr, ...stepErrors }));
         return next;
       });
     },
-    [getStepErrors, markDirty, markTyping]
+    [markDirty, markTyping]
   );
 
   const onFocus = useCallback(
@@ -264,11 +263,10 @@ export default function FormWizard() {
       if (!isLegit) {
         lastFocusReasonRef.current = "unexpected-blur";
       }
-      // Update error hints for the current step only (does not block navigation)
-      const eMap = getStepErrors(stepForField);
-      setErrors((prev) => ({ ...prev, ...eMap }));
+      // On blur, we already keep errors synced via useEffect([data]).
+      // This handler remains to set focus reason and permit step-scoped recompute if needed later.
     },
-    [getStepErrors]
+    []
   );
 
   // Review edit actions
@@ -288,6 +286,21 @@ export default function FormWizard() {
   // Shared UI tokens
   const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+
+  // PUBLIC_INTERFACE
+  // Accessible required label helper: appends * and adds aria-required + title on the associated control.
+  const RequiredMark = ({ children }) => (
+    <span>
+      <span>{children}</span>
+      <span
+        aria-hidden="true"
+        className="text-red-600 ml-0.5"
+        title="Required"
+      >
+        *
+      </span>
+    </span>
+  );
 
   // Stepper
   const Stepper = useCallback(() => {
@@ -519,7 +532,7 @@ export default function FormWizard() {
                       style={{ textTransform: "uppercase" }}
                       htmlFor="fw-username"
                     >
-                      Username
+                      <RequiredMark>Username</RequiredMark>
                     </label>
                     <div className="mt-1 rounded-lg gradient-accent">
                       <input
@@ -534,6 +547,8 @@ export default function FormWizard() {
                           markTouched("username");
                         }}
                         autoComplete="username"
+                        aria-required="true"
+                        title="Required"
                       />
                     </div>
                     {shouldShowError("username") && (
@@ -547,7 +562,7 @@ export default function FormWizard() {
                       style={{ textTransform: "uppercase" }}
                       htmlFor="fw-password"
                     >
-                      Password
+                      <RequiredMark>Password</RequiredMark>
                     </label>
                     <div className="mt-1 rounded-lg gradient-accent">
                       <input
@@ -563,6 +578,8 @@ export default function FormWizard() {
                         }}
                         type="password"
                         autoComplete="new-password"
+                        aria-required="true"
+                        title="Required"
                       />
                     </div>
                     {shouldShowError("password") && (
@@ -576,7 +593,7 @@ export default function FormWizard() {
                       style={{ textTransform: "uppercase" }}
                       htmlFor="fw-confirm"
                     >
-                      Confirm Password
+                      <RequiredMark>Confirm Password</RequiredMark>
                     </label>
                     <div className="mt-1 rounded-lg gradient-accent">
                       <input
@@ -592,6 +609,8 @@ export default function FormWizard() {
                         }}
                         type="password"
                         autoComplete="new-password"
+                        aria-required="true"
+                        title="Required"
                       />
                     </div>
                     {shouldShowError("confirm") && (
@@ -615,7 +634,7 @@ export default function FormWizard() {
                         style={{ textTransform: "uppercase" }}
                         htmlFor="fw-first"
                       >
-                        First Name
+                        <RequiredMark>First Name</RequiredMark>
                       </label>
                       <div className="mt-1 rounded-lg gradient-accent">
                         <input
@@ -630,6 +649,8 @@ export default function FormWizard() {
                             markTouched("firstName");
                           }}
                           autoComplete="given-name"
+                          aria-required="true"
+                          title="Required"
                         />
                       </div>
                       {shouldShowError("firstName") && (
@@ -642,7 +663,7 @@ export default function FormWizard() {
                         style={{ textTransform: "uppercase" }}
                         htmlFor="fw-last"
                       >
-                        Last Name
+                        <RequiredMark>Last Name</RequiredMark>
                       </label>
                       <div className="mt-1 rounded-lg gradient-accent">
                         <input
@@ -657,6 +678,8 @@ export default function FormWizard() {
                             markTouched("lastName");
                           }}
                           autoComplete="family-name"
+                          aria-required="true"
+                          title="Required"
                         />
                       </div>
                       {shouldShowError("lastName") && (
@@ -671,7 +694,7 @@ export default function FormWizard() {
                       style={{ textTransform: "uppercase" }}
                       htmlFor="fw-email"
                     >
-                      Email
+                      <RequiredMark>Email</RequiredMark>
                     </label>
                     <div className="mt-1 rounded-lg gradient-accent">
                       <input
@@ -687,6 +710,8 @@ export default function FormWizard() {
                         }}
                         type="email"
                         autoComplete="email"
+                        aria-required="true"
+                        title="Required"
                       />
                     </div>
                     {shouldShowError("email") && (
@@ -709,7 +734,7 @@ export default function FormWizard() {
                       style={{ textTransform: "uppercase" }}
                       htmlFor="fw-topic"
                     >
-                      Topic
+                      <RequiredMark>Topic</RequiredMark>
                     </label>
                     <div className="mt-1 rounded-lg gradient-accent">
                       <select
@@ -723,6 +748,8 @@ export default function FormWizard() {
                           onBlurField(3)(e);
                           markTouched("topic");
                         }}
+                        aria-required="true"
+                        title="Required"
                       >
                         <option value="">Select a topic</option>
                         <option value="design">Design</option>
@@ -773,6 +800,8 @@ export default function FormWizard() {
                             }}
                             className="accent-blue-600"
                             ref={i === 0 ? setInputRef("delivery") : undefined}
+                            aria-required="true"
+                            title="Required"
                           />
                           <span
                             className="text-sm font-medium"
