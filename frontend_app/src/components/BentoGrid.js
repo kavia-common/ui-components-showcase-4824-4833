@@ -19,7 +19,7 @@ export default function BentoGrid() {
     { key: "meetings", title: "Meetings", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
 
     // Row B
-    { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 xl:col-span-6", minH: "min-h-[180px]" },
+    { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 xl:col-span-6", minH: "min-h-[150px]" },
     { key: "ceo", title: "Insights from CEO", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
     { key: "ld", title: "L&D Insights", variant: "gradient-ld", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
 
@@ -42,7 +42,7 @@ export default function BentoGrid() {
 
   // Reusable header block with gradient background spanning 100% width/height.
   // Ensures accessible contrast by forcing white text/icons inside header area.
-  const HeaderBar = ({ id, title, right, className = "" }) => (
+  const HeaderBar = ({ id, title, right, className = "", dense = false }) => (
     <div
       className={`rounded-xl ${className}`}
       style={{
@@ -52,7 +52,7 @@ export default function BentoGrid() {
     >
       {/* Use an inner wrapper to guarantee padding is inside the gradient area
           so no clipped/partial strips appear. */}
-      <div className="px-3 py-2">
+      <div className={dense ? "px-3 py-1.5" : "px-3 py-2"}>
         <div className="flex items-center justify-between">
           <h3
             id={id}
@@ -198,26 +198,42 @@ export default function BentoGrid() {
 
     if (t.key === "ann") {
       return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+        <section
+          role="region"
+          aria-labelledby={`tile-${t.key}-title`}
+          className={`${t.spans} ${cardPlain} p-4`}
+        >
           <HeaderBar
             id={`tile-${t.key}-title`}
             title={t.title}
             right={
-              <a href="#" className={`${pillLinkBase} ${pillOnGradientHeader}`} aria-label="Know more announcements">
+              <a
+                href="#"
+                className={`${pillLinkBase} ${pillOnGradientHeader}`}
+                aria-label="Know more announcements"
+              >
                 Know More
               </a>
             }
-            className="mb-3"
+            className="mb-2"
+            dense
           />
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
-            <div className="col-span-4 grid grid-rows-3 gap-2">
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9]" aria-hidden="true" />
+          {/* Compact media grid to reduce vertical height */}
+          <div className="grid grid-cols-12 gap-2">
+            {/* Main media uses a shorter aspect to constrain height */}
+            <div
+              className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/10] sm:aspect-[16/10] md:aspect-[16/10]"
+              aria-hidden="true"
+            />
+            <div className="col-span-4 grid grid-rows-3 gap-1.5">
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/11]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/11]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/11]" aria-hidden="true" />
             </div>
           </div>
-          <p className="mt-2 text-sm text-slate-600">Highlights from across the organization this week.</p>
+          <p className="mt-1.5 text-[13px] md:text-sm text-slate-600">
+            Highlights from across the organization this week.
+          </p>
         </section>
       );
     }
