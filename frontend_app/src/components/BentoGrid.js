@@ -37,14 +37,14 @@ export default function BentoGrid() {
   const cardPlain = `bg-surface ${cardBase}`;
   const cardTinted = `${cardBase} bg-blue-50`;
 
-  // Unified header gradient with glossy radial glint
+  // Unified header gradient with glossy radial glint (exact per requirement)
   const baseHeaderGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
   const headerGradientWithGlint =
     `radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%), ${baseHeaderGradient}`;
 
   // PUBLIC_INTERFACE
-  // Simple 3-dot glyph for the header icon
+  // Small header glyph (consistent across all headers)
   const HeaderIcon = ({ ariaHidden = true }) => (
     <svg
       width="16"
@@ -62,24 +62,10 @@ export default function BentoGrid() {
   );
 
   // PUBLIC_INTERFACE
-  // Small badge chip for optional use; hides on very narrow widths
-  const HeaderChip = ({ children }) => (
-    <span
-      className="ml-auto hidden xs:inline-flex items-center h-5 px-2 rounded-full text-[12px] font-semibold text-white border border-white/30"
-      style={{
-        background: "rgba(255,255,255,0.24)",
-        backdropFilter: "saturate(140%) blur(4px)",
-      }}
-    >
-      {children}
-    </span>
-  );
-
-  // PUBLIC_INTERFACE
   /**
    * HeaderBar
-   * A unified header used across ALL tiles. Identical gradient, height, padding, icon/title alignment,
-   * typography, corner radius, and hover/focus states. No tile-specific overrides allowed.
+   * Centralized unified header: identical gradient, fixed height and padding, icon/title alignment,
+   * typography, radius, and interaction states. No per-tile overrides or conditional styles.
    */
   const HeaderBar = ({ id, title, right = null, className = "" }) => (
     <div
@@ -89,9 +75,11 @@ export default function BentoGrid() {
       <div className="w-full" style={{ background: headerGradientWithGlint }}>
         <div
           className={[
+            // fixed header height/padding and layout
             "min-h-[48px]",
             "flex items-center gap-2 md:gap-2.5",
             "px-4 py-3",
+            // color and typography
             "text-white",
           ].join(" ")}
         >
@@ -128,7 +116,7 @@ export default function BentoGrid() {
     "bg-white/15 text-white hover:bg-white hover:text-[var(--color-text)]";
 
   // PUBLIC_INTERFACE
-  // Render a tile by variant (headers unified; bodies unchanged)
+  // Render a tile by variant (headers unified; bodies unchanged, no header overrides)
   const Tile = ({ t }) => {
     if (t.variant === "gradient-hero") {
       return (
