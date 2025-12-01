@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * PUBLIC_INTERFACE
@@ -46,6 +46,9 @@ export default function FormWizard() {
 
   // Errors keyed by field name
   const [errors, setErrors] = useState({});
+  // Track if user is actively typing to guard against accidental step clicks
+  const typingRef = useRef(false);
+  const typingTimeoutRef = useRef(null);
 
   // When editing within Review, track which section is in edit mode (1,2,3) or null
   const [editingSection, setEditingSection] = useState(null);
@@ -116,8 +119,21 @@ export default function FormWizard() {
     return Math.round((completed / 3) * 100);
   }, [step1Valid, step2Valid, step3Valid]);
 
+  // Debounced validation trigger when user pauses typing (>=150ms)
+  const debouncedField = useRef({ field: null });
+  useEffect(() => {
+    if (!debouncedField.current.field) return;
+    const timeout = setTimeout(() => {
+      debouncedField.current.field = null;
+      validateStep(step, true);
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [data, step]);
+
   // Step navigation: only allow jumping backwards freely; jumping forward requires prior steps valid
   const goToStep = (target) => {
+    // If user is actively typing, ignore clicks to avoid focus stealing
+    if (typingRef.current) return;
     if (target < step) {
       setStep(target);
       setEditingSection(null);
@@ -146,7 +162,18 @@ export default function FormWizard() {
   const onChange = (field) => (e) => {
     const value =
       e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
+
+    // Mark as typing to prevent step navigation while user is inputting
+    typingRef.current = true;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      typingRef.current = false;
+    }, 250);
+
     setData((d) => ({ ...d, [field]: value }));
+
+    // Mark field for debounced validation
+    debouncedField.current.field = field;
   };
 
   // Review edit actions
@@ -183,6 +210,9 @@ export default function FormWizard() {
             <button
               key={s.key}
               type="button"
+              onMouseDown={(e) => {
+                if (typingRef.current) e.preventDefault();
+              }}
               onClick={() => goToStep(s.key)}
               className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border
                 ${isActive ? "bg-white border-blue-500 shadow" : "bg-white/70 border-gray-200 hover:bg-white"}
@@ -238,6 +268,7 @@ export default function FormWizard() {
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.username}
           onChange={onChange("username")}
+          onBlur={() => validateStep(1, true)}
           autoComplete="username"
         />
         {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
@@ -252,6 +283,7 @@ export default function FormWizard() {
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.password}
           onChange={onChange("password")}
+          onBlur={() => validateStep(1, true)}
           type="password"
           autoComplete="new-password"
         />
@@ -267,6 +299,7 @@ export default function FormWizard() {
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.confirm}
           onChange={onChange("confirm")}
+          onBlur={() => validateStep(1, true)}
           type="password"
           autoComplete="new-password"
         />
@@ -287,6 +320,7 @@ export default function FormWizard() {
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
             value={data.firstName}
             onChange={onChange("firstName")}
+            onBlur={() => validateStep(2, true)}
             autoComplete="given-name"
           />
           {errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
@@ -300,6 +334,7 @@ export default function FormWizard() {
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
             value={data.lastName}
             onChange={onChange("lastName")}
+            onBlur={() => validateStep(2, true)}
             autoComplete="family-name"
           />
           {errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
@@ -315,6 +350,7 @@ export default function FormWizard() {
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.email}
           onChange={onChange("email")}
+          onBlur={() => validateStep(2, true)}
           type="email"
           autoComplete="email"
         />
@@ -334,6 +370,7 @@ export default function FormWizard() {
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring bg-white"
           value={data.topic}
           onChange={onChange("topic")}
+          onBlur={() => validateStep(3, true)}
         >
           <option value="">Select a topic</option>
           <option value="design">Design</option>
@@ -366,6 +403,7 @@ export default function FormWizard() {
                 value={opt.value}
                 checked={data.delivery === opt.value}
                 onChange={onChange("delivery")}
+                onBlur={() => validateStep(3, true)}
                 className="accent-blue-600"
               />
               <span className="text-sm font-medium" style={{ textTransform: "uppercase" }}>
@@ -386,6 +424,7 @@ export default function FormWizard() {
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.interest}
           onChange={onChange("interest")}
+          onBlur={() => validateStep(3, true)}
           placeholder="Tell us more about your interests"
         />
       </div>
