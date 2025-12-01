@@ -35,6 +35,49 @@ export default function BentoGrid() {
   const UNIFIED_HEADER_GRADIENT = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
   // PUBLIC_INTERFACE
+  // Returns a slightly lighter variant of the header gradient for hover states.
+  // Kept inline to avoid Tailwind plugin changes.
+  const lighterHeaderGradient = "linear-gradient(45deg, #c73eaf 10%, #a545ad 20%, #2a57c0 100%)";
+
+  // PUBLIC_INTERFACE
+  // A reusable interactive wrapper that applies ONLY to actionable sub-cards/links/buttons.
+  // It preserves padding/size (no layout shift) and adds smooth transitions.
+  function InteractiveHover({ as: As = "div", className = "", children, title, ariaLabel, role, href, onClick, type, disabled }) {
+    const baseStyle = {
+      background: "transparent",
+      transition: "background 220ms ease, filter 220ms ease",
+      willChange: "background, filter",
+    };
+    const handleEnter = (e) => {
+      e.currentTarget.style.background = lighterHeaderGradient;
+      e.currentTarget.style.filter = "brightness(1.02) saturate(1.02)";
+    };
+    const handleLeave = (e) => {
+      e.currentTarget.style.background = "transparent";
+      e.currentTarget.style.filter = "none";
+    };
+
+    // Maintain text/icon contrast on hover: ensure content has high contrast classes.
+    const contrastClasses = "text-slate-900";
+
+    // Preserve padding/size: rely on the caller's padding/size classes; we do not mutate them.
+    const commonProps = {
+      className: `${className} ${contrastClasses}`,
+      style: baseStyle,
+      onMouseEnter: handleEnter,
+      onMouseLeave: handleLeave,
+      title,
+      "aria-label": ariaLabel,
+      role,
+      href,
+      onClick,
+      type,
+      disabled,
+    };
+    return <As {...commonProps}>{children}</As>;
+  }
+
+  // PUBLIC_INTERFACE
   // Header icon glyph (white dots, 16px) — white for contrast
   const HeaderIcon = ({ ariaHidden = true }) => (
     <svg
@@ -183,7 +226,8 @@ export default function BentoGrid() {
   // PUBLIC_INTERFACE
   // Helper to render tiles; body contents unchanged
   const Tile = ({ t }) => {
-    // Remove per-tile header overrides; all use unified Header above
+    // Interactive regions inside tiles are wrapped with <InteractiveHover>
+    // so hover applies ONLY to actionable sub-cards/links/buttons.
 
     if (t.variant === "tinted-blue") {
       return (
@@ -194,10 +238,23 @@ export default function BentoGrid() {
               <div key={i} className="h-9 w-9 rounded-xl bg-surface shadow-sm" aria-hidden="true" />
             ))}
           </div>
-          <ul className="mt-3 list-disc list-inside text-sm text-slate-700 space-y-1.5">
-            <li>New release notes available</li>
-            <li>Security bulletin: best practices</li>
-            <li>App performance improvements</li>
+          <ul className="mt-3 space-y-1.5">
+            {[
+              "New release notes available",
+              "Security bulletin: best practices",
+              "App performance improvements",
+            ].map((text, idx) => (
+              <li key={idx}>
+                <InteractiveHover
+                  as="a"
+                  href="#"
+                  ariaLabel={text}
+                  className="block rounded-md px-2 py-1.5 transition-colors duration-200 ease-out"
+                >
+                  <span className="text-sm font-medium">{text}</span>
+                </InteractiveHover>
+              </li>
+            ))}
           </ul>
         </section>
       );
@@ -209,7 +266,12 @@ export default function BentoGrid() {
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="More" className="mb-4" />
           <div className="grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-10 rounded-lg bg-gray-100" aria-hidden="true" />
+              <InteractiveHover
+                key={i}
+                className="h-10 rounded-lg bg-gray-100 transition-colors duration-200 ease-out"
+                role="button"
+                ariaLabel={`Open day ${i + 1}`}
+              />
             ))}
           </div>
         </section>
@@ -221,20 +283,30 @@ export default function BentoGrid() {
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}>
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="Know More" className="mb-1.5" />
           <div className="grid grid-cols-12 gap-1.5 sm:gap-2">
-            <div
-              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden bg-gray-100"
+            <InteractiveHover
+              as="a"
+              href="#"
+              title="Open announcement hero"
+              ariaLabel="Open announcement hero"
+              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden transition-colors duration-200 ease-out"
               style={{ aspectRatio: "16 / 9", maxHeight: "120px", minHeight: "84px" }}
-              aria-hidden="true"
-            />
+            >
+              <div className="w-full h-full bg-gray-100" aria-hidden="true" />
+            </InteractiveHover>
             <div className="col-span-12 sm:col-span-4 grid grid-rows-1">
-              <div
-                className="rounded-lg overflow-hidden bg-gray-100"
+              <InteractiveHover
+                as="a"
+                href="#"
+                title="Open secondary announcement"
+                ariaLabel="Open secondary announcement"
+                className="rounded-lg overflow-hidden transition-colors duration-200 ease-out"
                 style={{ aspectRatio: "16 / 10", maxHeight: "120px", minHeight: "70px" }}
-                aria-hidden="true"
-              />
+              >
+                <div className="w-full h-full bg-gray-100" aria-hidden="true" />
+              </InteractiveHover>
             </div>
           </div>
-          <p className="mt-0.5 text-[12px] sm:text-[13px] text-slate-600 line-clamp-1">
+          <p className="mt-0.5 text-[12px] sm:text-[13px] text-slate-700 line-clamp-1">
             Highlights from across the organization this week.
           </p>
         </section>
@@ -252,9 +324,14 @@ export default function BentoGrid() {
               <p className="mt-1 text-sm text-slate-700 line-clamp-3">
                 A short update from leadership on the current quarter and what to expect next.
               </p>
-              <button className="mt-2 rounded-full bg-primary px-4 h-9 text-sm font-semibold text-white hover:brightness-110 focus-ring">
-                Read
-              </button>
+              <InteractiveHover
+                as="button"
+                type="button"
+                ariaLabel="Read CEO update"
+                className="mt-2 rounded-full px-4 h-9 text-sm font-semibold text-white focus-ring transition-colors duration-200 ease-out"
+              >
+                <span className="relative z-10">Read</span>
+              </InteractiveHover>
             </div>
           </div>
         </section>
@@ -265,7 +342,13 @@ export default function BentoGrid() {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="Manage" className="mb-3" />
-          <div className="min-h-[90px] rounded-lg border border-gray-200" aria-hidden="true" />
+          <InteractiveHover
+            className="min-h-[90px] rounded-lg border border-gray-200 transition-colors duration-200 ease-out"
+            role="button"
+            ariaLabel="Open Toolshelf"
+          >
+            <div className="w-full h-full" aria-hidden="true" />
+          </InteractiveHover>
         </section>
       );
     }
@@ -276,12 +359,15 @@ export default function BentoGrid() {
           <Header id={`tile-${t.key}-title`} title={t.title} className="mb-3" hideAction />
           <div className="space-y-2">
             {["Division 2025 Edition 1", "Division 2025 Edition 2", "Division 2025 Edition 3"].map((label) => (
-              <button
+              <InteractiveHover
                 key={label}
-                className="w-full h-10 rounded-full text-primary bg-gray-50 hover:bg-primary hover:text-white transition focus-ring"
+                as="button"
+                type="button"
+                ariaLabel={label}
+                className="w-full h-10 rounded-full transition-colors duration-200 ease-out"
               >
-                {label}
-              </button>
+                <span className="relative z-10 font-medium">{label}</span>
+              </InteractiveHover>
             ))}
           </div>
         </section>
@@ -294,7 +380,15 @@ export default function BentoGrid() {
           <Header id={`tile-${t.key}-title`} title={t.title} className="mb-3" hideAction />
           <div className="grid grid-cols-2 gap-3 items-center justify-items-center">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-10 w-20 bg-gray-100 rounded-md" aria-hidden="true" />
+              <InteractiveHover
+                key={i}
+                as="a"
+                href="#"
+                ariaLabel={`Open CSR item ${i + 1}`}
+                className="h-10 w-20 rounded-md transition-colors duration-200 ease-out"
+              >
+                <div className="w-full h-full bg-gray-100 rounded-md" aria-hidden="true" />
+              </InteractiveHover>
             ))}
           </div>
         </section>
@@ -305,7 +399,14 @@ export default function BentoGrid() {
     return (
       <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH || ""}`}>
         <Header id={`tile-${t.key}-title`} title={t.title} className="mb-2" />
-        <p className="mt-2 text-sm text-slate-600">Content</p>
+        <InteractiveHover
+          as="a"
+          href="#"
+          ariaLabel="Open content"
+          className="mt-2 block rounded-md px-3 py-2 transition-colors duration-200 ease-out"
+        >
+          <p className="text-sm">Content</p>
+        </InteractiveHover>
       </section>
     );
   };
