@@ -3,14 +3,14 @@ import React from "react";
 /**
  * PUBLIC_INTERFACE
  * Breadcrumbs
- * Pixel-precise breadcrumb aligned to the reference:
- * - Container: rounded pill/card with subtle border and soft shadow (≈14–16px radius)
- * - Padding: 8–10px vertical, 14–16px horizontal
- * - Separator: chevron 16px, stroke 2px, low-contrast gray (≈slate-400/80)
- * - Link items: 13–14px responsive, weight 500, slight letter-spacing; hover underline + tint
- * - Current item: bold 700 in a subtle white chip with thin border and optional tiny gradient dot
- * - Focus ring: visible with offset, no layout shift
- * - Accessibility: uses <nav aria-label="Breadcrumb"> with <ol>/<li>, aria-current on last item
+ * Implements the exact styling from kavia-docs/breadcrumbs_implementation_notes.md:
+ * - Container: pill/card, 14–16px radius, 1px border with ~8% opacity, soft shadow
+ * - Padding: 10px vertical, 16px horizontal (wrap-safe)
+ * - Separator: chevron 16px, stroke 2px, color slate-400 at 80–86% opacity, spacing 8–12px
+ * - Link items: 13–14px, weight 500, tracking 0.2px, slate-700 → slate-900 on hover, underline on hover
+ * - Current item: 700 weight inside subtle white chip with 1px border, tiny gradient accent dot
+ * - Focus ring: 2px ring + 2px offset, indigo/cyan per Ocean theme, no layout shift
+ * - Accessibility: <nav aria-label="Breadcrumb"> with <ol>/<li>, aria-current on last item
  */
 export default function Breadcrumbs() {
   const crumbs = ["Home", "Components", "Forms", "Wizard"];
@@ -20,7 +20,7 @@ export default function Breadcrumbs() {
   const accentGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
-  // Chevron separator icon (16px, stroke 2)
+  // Chevron separator icon (16px, stroke 2). Color driven by parent via currentColor.
   const Chevron = ({ ariaHidden = true }) => (
     <svg
       width="16"
@@ -42,27 +42,37 @@ export default function Breadcrumbs() {
   );
 
   // Typography and focus tokens
-  const baseTypeClasses =
-    "text-[13px] sm:text-[14px] tracking-[0.005em]";
-  const focusRing =
+  const typeClasses = "text-[13px] sm:text-[14px] tracking-[0.0125em]";
+  const linkBase =
+    "px-1 py-1 rounded-[10px] font-medium text-slate-700 hover:text-slate-900 transition-colors";
+  const linkUnderline =
+    "hover:underline underline-offset-2 decoration-slate-400/60";
+  const focusVisible =
     "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500/60";
+
+  // Container/card styles per notes
+  const containerStyle = {
+    background: "#FFFFFF",
+    borderRadius: 16,
+    border: "1px solid rgba(17,24,39,0.08)", // slate-900 @ 8%
+    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+  };
+
+  // Current item chip styles per notes
+  const currentChipStyle = {
+    background: "#FFFFFF",
+    border: "1px solid rgba(17,24,39,0.10)", // slightly stronger than container
+    boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+  };
 
   return (
     <nav aria-label="Breadcrumb">
-      {/* Card/pill container */}
-      <div
-        className="shadow-soft"
-        style={{
-          background: "#FFFFFF",
-          borderRadius: 14,
-          border: "1px solid rgba(17,24,39,0.08)", // slate-900 @ 8%
-        }}
-      >
+      <div className="shadow-soft" style={containerStyle}>
         <ol
           className={[
             "flex flex-wrap items-center",
-            "py-2.5 px-4",
-            baseTypeClasses,
+            "py-2.5 px-4", // ≈ 10px vert, 16px horiz
+            typeClasses,
           ].join(" ")}
         >
           {crumbs.map((c, idx) => {
@@ -71,17 +81,7 @@ export default function Breadcrumbs() {
             return (
               <li key={c} className="flex items-center">
                 {!isLast ? (
-                  <a
-                    href="#"
-                    className={[
-                      "px-1 py-1 rounded-[8px]",
-                      "text-slate-700 hover:text-slate-900",
-                      "font-medium",
-                      "transition-colors",
-                      "hover:underline underline-offset-2 decoration-slate-400/60",
-                      focusRing,
-                    ].join(" ")}
-                  >
+                  <a href="#" className={[linkBase, linkUnderline, focusVisible].join(" ")}>
                     {c}
                   </a>
                 ) : (
@@ -94,12 +94,7 @@ export default function Breadcrumbs() {
                       "rounded-full",
                       "px-3 py-1.5",
                     ].join(" ")}
-                    style={{
-                      background: "#FFFFFF", // solid per reference; change to faint tint if needed
-                      border: "1px solid rgba(17,24,39,0.10)",
-                      boxShadow:
-                        "0 1px 2px rgba(16,24,40,0.05)",
-                    }}
+                    style={currentChipStyle}
                   >
                     {/* Tiny gradient dot accent (≈6px) */}
                     <span
@@ -111,13 +106,12 @@ export default function Breadcrumbs() {
                   </span>
                 )}
 
-                {/* Separator chevron (not after last) */}
+                {/* Separator chevron (not after last) — spacing and color per notes */}
                 {idx < lastIndex && (
                   <span
                     className="mx-2 select-none inline-flex items-center justify-center"
                     aria-hidden="true"
-                    // Use slate-400 with ~80–90% opacity for the glyph color
-                    style={{ color: "rgba(148,163,184,0.85)" }}
+                    style={{ color: "rgba(148,163,184,0.86)" }} // slate-400 @ ~86%
                   >
                     <Chevron />
                   </span>
