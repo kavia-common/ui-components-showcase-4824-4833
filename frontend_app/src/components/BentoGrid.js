@@ -6,7 +6,7 @@ import React from "react";
  * Responsive 12/8/6/1 column bento grid aligned to the Ocean Professional theme.
  * All tile headers now reuse the exact same unified HeaderBar component/style
  * as the first grid’s header: same gradient, height/padding, icon/title alignment,
- * typography, corner radius, and focus/hover states. Bodies and spans unchanged.
+ * typography, corner radius, and hover/focus states. Bodies and spans unchanged.
  */
 export default function BentoGrid() {
   /**
@@ -76,8 +76,12 @@ export default function BentoGrid() {
   );
 
   // PUBLIC_INTERFACE
-  // Unified HeaderBar component used by every tile
-  const HeaderBar = ({ id, title, right = null, className = "", showChip = false }) => (
+  /**
+   * HeaderBar
+   * A unified header used across ALL tiles. Identical gradient, height, padding, icon/title alignment,
+   * typography, corner radius, and hover/focus states. No tile-specific overrides allowed.
+   */
+  const HeaderBar = ({ id, title, right = null, className = "" }) => (
     <div
       className={["overflow-hidden", className].join(" ")}
       style={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
@@ -91,7 +95,6 @@ export default function BentoGrid() {
             "text-white",
           ].join(" ")}
         >
-          {/* Icon container - identical across headers */}
           <span
             className="inline-flex items-center justify-center rounded-full"
             style={{
@@ -106,7 +109,6 @@ export default function BentoGrid() {
             <HeaderIcon />
           </span>
 
-          {/* Title - bold 14px/20px, ellipsis */}
           <h3
             id={id}
             className="font-bold text-[14px] leading-5 whitespace-nowrap overflow-hidden text-ellipsis"
@@ -114,9 +116,6 @@ export default function BentoGrid() {
             {title}
           </h3>
 
-          {showChip && <HeaderChip>Featured</HeaderChip>}
-
-          {/* Right-aligned action(s); kept lightweight and accessible */}
           <div className="ml-auto flex items-center">{right}</div>
         </div>
       </div>
