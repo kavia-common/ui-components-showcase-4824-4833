@@ -66,3 +66,9 @@ body {
 .top-separator {
   border-top: 1px solid rgba(255, 255, 255, 0.10);
 }
+
+/* Extra visible ring on white cards for keyboard users */
+.focus-ring-strong {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 0 0 4px rgba(37, 99, 235, 0.55);
+}
