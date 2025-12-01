@@ -13,8 +13,17 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
  * - Controlled inputs bound to raw state; onChange uses functional setState with no transforms.
  * - Handlers memoized with useCallback; no state updates during render.
  * - Validations only onBlur/Next/Save/Submit or trailing debounce after typing stops.
- * - Focus-stability guard: remember lastFocusedField and refocus if DOM focus moves unintentionally.
+ * - Focus-stability guard (updated): remember lastFocusedField and refocus ONLY when focus unexpectedly vanishes
+ *   (active element becomes null) or the previous focused element is removed. Legitimate user-initiated changes
+ *   via mouse, Tab/Shift+Tab, or label clicks must not be intercepted.
  * - Keeps Ocean Professional styling and gating rules intact.
+ *
+ * Manual verification quick path:
+ * - Step 1: type in Username → Tab to Password → Tab to Confirm. Focus must not jump back unexpectedly.
+ * - Navigate to Step 2: click First/Last/Email fields by mouse; focus should follow normally.
+ * - Step 3: click delivery labels or Tab among inputs; focus moves as expected.
+ * - Stepper: clickable when not typing; while typing, clicks are ignored without preventDefault.
+ * - Review: per-section Edit navigates to step and fields accept focus; validations still onBlur/debounced.
  */
 export default function FormWizard() {
   // Steps metadata (static; stable keys)
@@ -57,6 +66,8 @@ export default function FormWizard() {
 
   // Focus tracking + refs for focus-stability guard
   const lastFocusedFieldRef = useRef(null);
+  // Track the last focus reason: 'mouse', 'keyboard', 'label', 'programmatic', 'unexpected-blur'
+  const lastFocusReasonRef = useRef(null);
   const inputRefs = useRef({
     username: null,
     password: null,
@@ -72,6 +83,30 @@ export default function FormWizard() {
 
   // When editing within Review, track which section is in edit mode (1,2,3) or null
   const [editingSection, setEditingSection] = useState(null);
+
+  // Detect keyboard navigation (Tab/Shift+Tab) and mouse interactions to set focus reason.
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Tab") {
+        lastFocusReasonRef.current = "keyboard";
+      }
+    };
+    const handleMouseDown = (e) => {
+      // If clicking a label associated with an input, it will cause programmatic focus on the input; treat as 'label'
+      const target = e.target;
+      if (target && target.tagName === "LABEL") {
+        lastFocusReasonRef.current = "label";
+      } else {
+        lastFocusReasonRef.current = "mouse";
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("mousedown", handleMouseDown, true);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("mousedown", handleMouseDown, true);
+    };
+  }, []);
 
   // Utility: email regex
   const isValidEmail = useCallback((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), []);
@@ -235,6 +270,8 @@ export default function FormWizard() {
 
   const onFocus = useCallback((field) => (e) => {
     lastFocusedFieldRef.current = field;
+    // If reason not set by key/mouse handlers (rare), assume programmatic
+    if (!lastFocusReasonRef.current) lastFocusReasonRef.current = "programmatic";
     isTypingRef.current = true; // freeze visuals immediately on focus
     // record ref if not present (esp. radio group/checkbox)
     if (inputRefs.current[field] == null) {
@@ -243,9 +280,22 @@ export default function FormWizard() {
   }, []);
 
   const onBlurField = useCallback(
-    (stepForField) => () => {
+    (stepForField) => (e) => {
       if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
       isTypingRef.current = false; // allow recompute
+      // Determine if blur was unexpected: activeElement is null/body or was removed
+      // We mark reason as 'unexpected-blur' to allow the guard to potentially restore focus.
+      // If immediately after this blur a focus event occurs (mouse/tab/label), global listeners will set a legit reason.
+      const related = e?.relatedTarget;
+      const active = document.activeElement;
+      // If focus is going to another valid element (relatedTarget) or activeElement is a focusable input,
+      // we consider it legitimate and do not mark unexpected.
+      const isLegit =
+        (related && (related instanceof HTMLElement)) ||
+        (active && active !== document.body && active !== null && active !== undefined);
+      if (!isLegit) {
+        lastFocusReasonRef.current = "unexpected-blur";
+      }
       validateStep(stepForField, true); // validate on blur
     },
     [validateStep]
@@ -290,9 +340,6 @@ export default function FormWizard() {
             <button
               key={`stepper-${s.key}`}
               type="button"
-              onMouseDown={(e) => {
-                if (isTypingRef.current) e.preventDefault();
-              }}
               onClick={() => goToStep(s.key)}
               className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border ${
                 isActive ? "bg-white border-blue-500 shadow" : "bg-white/70 border-gray-200 hover:bg-white"
@@ -339,26 +386,44 @@ export default function FormWizard() {
     if (el) inputRefs.current[field] = el;
   }, []);
 
-  // Focus-stability guard: if focus jumped away unintentionally after render, restore it.
+  // Focus-stability guard: Only auto-refocus on unexpected blur or when element was removed.
   useEffect(() => {
-    const active = document.activeElement;
     const last = lastFocusedFieldRef.current;
     if (!last) return;
-    // If user is still on a field, keep it; if focus vanished or moved out while typing, restore
     const refEl = inputRefs.current[last];
-    if (refEl && active !== refEl) {
-      // Only restore if field's value didn't change source-of-truth; we don't alter value
-      refEl.focus();
-      // Do not scroll jank
-      if (typeof refEl.setSelectionRange === "function") {
-        // keep caret at end
-        const val = refEl.value ?? "";
-        try {
+    const active = document.activeElement;
+
+    // Determine if the previously focused element still exists
+    const refElRemoved = !refEl || !document.body.contains(refEl);
+
+    // If user initiated a legitimate focus change by mouse/tab/label or programmatic due to label click,
+    // do not override their action.
+    const legitReasons = new Set(["mouse", "keyboard", "label"]);
+    const reason = lastFocusReasonRef.current;
+
+    const activeIsNullish =
+      !active || active === document.body || (active && !(active instanceof HTMLElement));
+
+    const shouldRestore =
+      (reason === "unexpected-blur" && (activeIsNullish || refElRemoved)) || // unexpected blur or nothing focused
+      (refElRemoved && activeIsNullish); // element removed and nothing else focused
+
+    if (shouldRestore && refEl) {
+      // restore focus quietly
+      try {
+        refEl.focus({ preventScroll: true });
+        if (typeof refEl.setSelectionRange === "function") {
+          const val = refEl.value ?? "";
           refEl.setSelectionRange(val.length, val.length);
-        } catch {
-          /* noop */
         }
+      } catch {
+        /* noop */
       }
+      // Reset reason after auto-focus to avoid loops
+      lastFocusReasonRef.current = null;
+    } else if (legitReasons.has(reason)) {
+      // On legit reasons, clear so future checks don't misinterpret
+      lastFocusReasonRef.current = null;
     }
   });
 
