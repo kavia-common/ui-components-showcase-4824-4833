@@ -3,13 +3,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 /**
  * PUBLIC_INTERFACE
  * FormWizard
- * Four-step wizard with validation, clickable progress stepper,
- * review with per-section edit/save, and consent-gated submission.
+ * Four-step wizard with free navigation (Next/Back and clickable stepper),
+ * deferred validation until submission, and acknowledgement screen.
  *
- * Fixes:
- * 1) Next button reliably advances steps and never triggers an accidental form submit.
- * 2) Preferences step correctly captures Topic and Delivery state; selecting a topic enables Next.
- * 3) Added/verified state bindings and handlers for all controls.
+ * Updates per task:
+ * 1) Next and Back always navigate between steps without blocking on validation.
+ * 2) Progress step indicators are clickable to jump to any section.
+ * 3) Validation is deferred to submission time; Submit is enabled only when all steps are valid and consent checked.
+ * 4) Acknowledgement screen is preserved after successful submit.
  */
 export default function FormWizard() {
   // Steps metadata (static; stable keys)
@@ -44,10 +45,10 @@ export default function FormWizard() {
     consent: false,
   });
 
-  // Errors keyed by field name
+  // Errors keyed by field name (used for inline hints; not blocking navigation)
   const [errors, setErrors] = useState({});
 
-  // Track active typing state to freeze validation/progress recompute and disable stepper clicks
+  // Track active typing (for small UX niceties; no navigation blocking)
   const isTypingRef = useRef(false);
   const typingStopTimerRef = useRef(null);
 
@@ -116,9 +117,9 @@ export default function FormWizard() {
   );
 
   // PUBLIC_INTERFACE
-  // Step validation: runs only when explicitly invoked (onBlur/Next/Save/Submit)
-  const validateStep = useCallback(
-    (targetStep = step, persistErrors = true) => {
+  // Step validation: returns errors for a target step. Does not block navigation.
+  const getStepErrors = useCallback(
+    (targetStep) => {
       const e = {};
       if (targetStep === 1) {
         if (!data.username.trim()) e.username = "Username is required";
@@ -139,63 +140,34 @@ export default function FormWizard() {
         if (!data.consent)
           e.consent = "You must provide consent before submitting";
       }
-      if (persistErrors) setErrors(e);
-      return Object.keys(e).length === 0;
+      return e;
     },
-    [data, step, isValidEmail]
+    [data, isValidEmail]
   );
 
-  /** Validity snapshot to avoid recompute while typing */
-  const lastValidityRef = useRef({ s1: false, s2: false, s3: false });
+  // PUBLIC_INTERFACE
+  // Full form validity: all steps 1-3 valid and consent checked on step 4.
+  const isFormValid = useMemo(() => {
+    const s1 = getStepErrors(1);
+    const s2 = getStepErrors(2);
+    const s3 = getStepErrors(3);
+    const s4 = getStepErrors(4);
+    return (
+      Object.keys(s1).length === 0 &&
+      Object.keys(s2).length === 0 &&
+      Object.keys(s3).length === 0 &&
+      Object.keys(s4).length === 0
+    );
+  }, [getStepErrors]);
 
-  const computeS1 = useCallback(() => {
-    const u = data.username;
-    const p = data.password;
-    const c = data.confirm;
-    if (!u || !u.trim()) return false;
-    if (!p || p.length < 8) return false;
-    if (c !== p) return false;
-    return true;
-  }, [data.username, data.password, data.confirm]);
+  // Helpers for visual progress only
+  const computeS1 = useCallback(() => Object.keys(getStepErrors(1)).length === 0, [getStepErrors]);
+  const computeS2 = useCallback(() => Object.keys(getStepErrors(2)).length === 0, [getStepErrors]);
+  const computeS3 = useCallback(() => Object.keys(getStepErrors(3)).length === 0, [getStepErrors]);
 
-  const computeS2 = useCallback(() => {
-    const f = data.firstName;
-    const l = data.lastName;
-    const e = data.email;
-    if (!f || !f.trim()) return false;
-    if (!l || !l.trim()) return false;
-    if (!e) return false;
-    return isValidEmail(e);
-  }, [data.firstName, data.lastName, data.email, isValidEmail]);
-
-  const computeS3 = useCallback(() => {
-    const t = data.topic;
-    const d = data.delivery;
-    if (!t) return false;
-    if (!["daily", "weekly", "monthly"].includes(d)) return false;
-    return true;
-  }, [data.topic, data.delivery]);
-
-  const step1Valid = useMemo(() => {
-    if (isTypingRef.current) return lastValidityRef.current.s1;
-    const v = computeS1();
-    lastValidityRef.current.s1 = v;
-    return v;
-  }, [computeS1, data.username, data.password, data.confirm]);
-
-  const step2Valid = useMemo(() => {
-    if (isTypingRef.current) return lastValidityRef.current.s2;
-    const v = computeS2();
-    lastValidityRef.current.s2 = v;
-    return v;
-  }, [computeS2, data.firstName, data.lastName, data.email]);
-
-  const step3Valid = useMemo(() => {
-    if (isTypingRef.current) return lastValidityRef.current.s3;
-    const v = computeS3();
-    lastValidityRef.current.s3 = v;
-    return v;
-  }, [computeS3, data.topic, data.delivery]);
+  const step1Valid = computeS1();
+  const step2Valid = computeS2();
+  const step3Valid = computeS3();
 
   const percentComplete = useMemo(() => {
     const completed =
@@ -203,70 +175,13 @@ export default function FormWizard() {
     return Math.round((completed / 3) * 100);
   }, [step1Valid, step2Valid, step3Valid]);
 
-  // Debounced validation: run only after 300ms of no typing and when no input is focused.
-  const pendingFieldRef = useRef(null);
-  useEffect(() => {
-    if (!pendingFieldRef.current) return;
-    if (isTypingRef.current) return;
-    const t = setTimeout(() => {
-      if (!isTypingRef.current) {
-        const target = step;
-        validateStep(target, true);
-        pendingFieldRef.current = null;
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [data, step, validateStep]);
-
-  // Step navigation: backward free; forward requires prior steps valid
-  const goToStep = useCallback(
-    (target) => {
-      if (isTypingRef.current) return;
-      if (target < step) {
-        setStep(target);
-        setEditingSection(null);
-        setErrors({});
-        return;
-      }
-      for (let i = 1; i < target; i++) {
-        const ok = validateStep(i, true);
-        if (!ok) {
-          setStep(i);
-          return;
-        }
-      }
-      setStep(target);
-      setEditingSection(null);
-      setErrors({});
-    },
-    [step, validateStep]
-  );
-
-  // Next/Prev controls with explicit preventDefault and bound limits
-  const next = useCallback(
-    (e) => {
-      if (e && typeof e.preventDefault === "function") e.preventDefault();
-      if (isTypingRef.current) return;
-      if (validateStep(step, true)) {
-        setStep((s) => Math.min(4, s + 1));
-      }
-    },
-    [step, validateStep]
-  );
-
-  const prev = useCallback((e) => {
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
-    if (isTypingRef.current) return;
-    setStep((s) => Math.max(1, s - 1));
-  }, []);
-
-  // Helpers for field changes (functional updates, raw values)
+  // Typing helpers
   const markTyping = useCallback(() => {
     isTypingRef.current = true;
     if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
     typingStopTimerRef.current = setTimeout(() => {
       isTypingRef.current = false;
-    }, 300);
+    }, 250);
   }, []);
 
   const onChange = useCallback(
@@ -275,7 +190,6 @@ export default function FormWizard() {
         e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
       markTyping();
       setData((prev) => ({ ...prev, [field]: value }));
-      pendingFieldRef.current = field;
     },
     [markTyping]
   );
@@ -301,33 +215,32 @@ export default function FormWizard() {
       if (!isLegit) {
         lastFocusReasonRef.current = "unexpected-blur";
       }
-      validateStep(stepForField, true);
+      // Update error hints for the current step only (does not block navigation)
+      const eMap = getStepErrors(stepForField);
+      setErrors((prev) => ({ ...prev, ...eMap }));
     },
-    [validateStep]
+    [getStepErrors]
   );
 
   // Review edit actions
   const startEdit = useCallback((section) => {
     if (isTypingRef.current) return;
     setEditingSection(section);
-    setErrors({});
     setStep(section);
   }, []);
 
   const saveFromEdit = useCallback(() => {
     if (isTypingRef.current) return;
-    const ok = validateStep(step, true);
-    if (!ok) return;
+    // On Save, just go back to Review; inline hints remain if any
     setEditingSection(null);
     setStep(4);
-    setErrors({});
-  }, [step, validateStep]);
+  }, []);
 
   // Shared UI tokens
   const headerGradient =
     "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
-  // Stepper isolated (does not live under step content subtree)
+  // Stepper
   const Stepper = useCallback(() => {
     return (
       <div className="mb-5">
@@ -343,14 +256,13 @@ export default function FormWizard() {
               <button
                 key={`stepper-${s.key}`}
                 type="button"
-                onClick={() => goToStep(s.key)}
+                onClick={() => setStep(s.key)}
                 className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border ${
                   isActive
                     ? "bg-white border-blue-500 shadow"
                     : "bg-white/70 border-gray-200 hover:bg-white"
                 } focus-ring`}
                 aria-current={isActive ? "step" : undefined}
-                aria-disabled={isTypingRef.current ? "true" : "false"}
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -398,7 +310,7 @@ export default function FormWizard() {
         </div>
       </div>
     );
-  }, [goToStep, headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]);
+  }, [headerGradient, percentComplete, step, step1Valid, step2Valid, step3Valid, steps]);
 
   // Input refs setter
   const setInputRef = useCallback((field) => (el) => {
@@ -439,15 +351,6 @@ export default function FormWizard() {
       lastFocusReasonRef.current = null;
     }
   });
-
-  // PUBLIC_INTERFACE
-  // Only enable Next if current step valid
-  const canProceed = useCallback(() => {
-    if (step === 1) return step1Valid;
-    if (step === 2) return step2Valid;
-    if (step === 3) return step3Valid;
-    return true;
-  }, [step, step1Valid, step2Valid, step3Valid]);
 
   const panelBase = "mt-4";
   const hiddenCls = "hidden";
@@ -496,7 +399,7 @@ export default function FormWizard() {
               setStep(1);
               setEditingSection(null);
               setErrors({});
-              // clear data if desired; keeping user entries aids demo
+              // keep data for demo; could be reset if needed
             }}
           >
             <span style={{ textTransform: "uppercase" }}>Start Again</span>
@@ -521,7 +424,7 @@ export default function FormWizard() {
                 <span style={{ textTransform: "uppercase" }}>Form Wizard</span>
               </h2>
               <p className="text-sm text-slate-600">
-                Complete the steps below. You can click the step labels to jump back and edit.
+                Navigate freely between steps. Submit becomes available when all required fields are valid and consent is checked.
               </p>
             </header>
 
@@ -911,7 +814,7 @@ export default function FormWizard() {
                       </span>
                     </label>
                     <p id="fw-consent-help" className="text-xs text-gray-600 mt-1">
-                      Submitting is enabled only when consent is checked.
+                      Submit is enabled when all steps are valid and consent is checked.
                     </p>
                     {errors.consent && (
                       <p className="text-xs text-red-600 mt-1">{errors.consent}</p>
@@ -928,7 +831,7 @@ export default function FormWizard() {
                   <button
                     type="button"
                     className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
-                    onClick={prev}
+                    onClick={() => setStep((s) => Math.max(1, s - 1))}
                   >
                     <span style={{ textTransform: "uppercase" }}>Back</span>
                   </button>
@@ -951,7 +854,6 @@ export default function FormWizard() {
                       onClick={() => {
                         setEditingSection(null);
                         setStep(4);
-                        setErrors({});
                       }}
                     >
                       <span style={{ textTransform: "uppercase" }}>Cancel</span>
@@ -960,9 +862,8 @@ export default function FormWizard() {
                 ) : step < 4 ? (
                   <button
                     type="button"
-                    className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={next}
-                    disabled={!canProceed()}
+                    className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring"
+                    onClick={() => setStep((s) => Math.min(4, s + 1))}
                     style={{ background: headerGradient }}
                   >
                     <span style={{ textTransform: "uppercase" }}>Next</span>
@@ -973,11 +874,18 @@ export default function FormWizard() {
                     className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={(e) => {
                       if (e && e.preventDefault) e.preventDefault();
-                      if (validateStep(4, true)) {
+                      // On submit, run validation for all steps and consent
+                      const e1 = getStepErrors(1);
+                      const e2 = getStepErrors(2);
+                      const e3 = getStepErrors(3);
+                      const e4 = getStepErrors(4);
+                      const merged = { ...e1, ...e2, ...e3, ...e4 };
+                      setErrors(merged);
+                      if (Object.keys(merged).length === 0) {
                         setSubmitted(true);
                       }
                     }}
-                    disabled={!data.consent}
+                    disabled={!isFormValid}
                     style={{ background: headerGradient }}
                   >
                     <span style={{ textTransform: "uppercase" }}>Submit</span>
