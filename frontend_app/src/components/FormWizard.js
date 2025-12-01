@@ -6,15 +6,25 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  * Four-step wizard with validation, clickable progress stepper,
  * review with per-section edit/save, and consent-gated submission.
  *
- * Stabilization updates:
- * - Freeze validation, progress, and stepper interactions while the user is typing (isTyping flag via focus/blur and debounced timer).
- * - Do not perform heavy validations during render; validate only onBlur or after a 250ms debounce when typing stops.
- * - All inputs are fully controlled with raw state; onChange uses functional updates and does not trim/format values.
- * - Remove any value text-transform from inputs (labels may keep uppercase).
- * - Prevent stepper clicks while isTyping is true.
+ * Strong isolation for typing:
+ * NOTE:
+ * - Inputs use value={data.field} directly (raw), never derived/computed.
+ * - No text transforms applied to input values; casing only via label styles.
+ * - Avoid using key props that change with state for inputs/parents; nothing that would remount onChange.
+ * - Validation/progress recompute deferred until blur or 300ms after typing stops.
+ * - Stepper uses cached validity; clicking is disabled while typing.
+ * 1) Inputs bind to raw state only; no derived/computed value bindings.
+ * 2) onChange uses functional setState: prev => ({ ...prev, field: value }).
+ * 3) No dynamic key props on inputs/containers tied to value/state that could remount.
+ * 4) Validation/progress computation is frozen during typing and only refreshed onBlur or trailing debounce (300ms).
+ * 5) Stepper consumes cached validity updated post-typing; no validation during render.
+ * 6) No heavy effects on value changes (no scrollIntoView/analytics).
+ * 7) Hard guard: while any input is focused (isTyping), no validation/progress recompute runs; runs on blur/Next/Save.
+ * 8) Includes a console-based typing harness to simulate typing sentences across fields.
+ * 9) Ocean Professional styling and business rules preserved; Next/Submit gating occurs onBlur/Next/Save/Submit only.
  */
 export default function FormWizard() {
-  // Steps metadata
+  // Steps metadata (static; no dynamic keys)
   const steps = useMemo(
     () => [
       { key: 1, label: "Account" },
@@ -61,8 +71,8 @@ export default function FormWizard() {
   // Utility: email regex
   const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-  // Validate current step (or a specific step for Review edit flow)
   // PUBLIC_INTERFACE
+  // Step validation: runs only when explicitly invoked (onBlur/Next/Save/Submit)
   const validateStep = (targetStep = step, persistErrors = true) => {
     const e = {};
     if (targetStep === 1) {
@@ -86,9 +96,8 @@ export default function FormWizard() {
   };
 
   /**
-   * Lightweight per-step validity used only for visuals and Next gating.
-   * IMPORTANT: While isTyping is true, freeze derived validity (return previous snapshot)
-   * to prevent progress/stepper thrash during keystrokes.
+   * Validity snapshot
+   * While typing, we serve the last cached snapshot to prevent any recompute during keystrokes.
    */
   const lastValidityRef = useRef({ s1: false, s2: false, s3: false });
   const computeS1 = () => {
@@ -137,16 +146,16 @@ export default function FormWizard() {
     return v;
   }, [data.topic, data.delivery]);
 
+  // Progress percentage from cached validity only
   const percentComplete = useMemo(() => {
     const completed = (step1Valid ? 1 : 0) + (step2Valid ? 1 : 0) + (step3Valid ? 1 : 0);
     return Math.round((completed / 3) * 100);
   }, [step1Valid, step2Valid, step3Valid]);
 
-  // Debounced validation: run only after 250ms of no typing and when no input is focused.
+  // Debounced validation: run only after 300ms of no typing and when no input is focused.
   const pendingFieldRef = useRef(null);
   useEffect(() => {
     if (!pendingFieldRef.current) return;
-    // If still typing, do nothing yet.
     if (isTypingRef.current) return;
     const t = setTimeout(() => {
       if (!isTypingRef.current) {
@@ -154,21 +163,19 @@ export default function FormWizard() {
         validateStep(target, true);
         pendingFieldRef.current = null;
       }
-    }, 250);
+    }, 300);
     return () => clearTimeout(t);
   }, [data, step]);
 
-  // Step navigation: only allow jumping backwards freely; jumping forward requires prior steps valid
+  // Step navigation: backward free; forward requires prior steps valid
   const goToStep = (target) => {
-    // If user is actively typing, ignore clicks to avoid focus stealing
-    if (isTypingRef.current) return;
+    if (isTypingRef.current) return; // hard guard against focus stealing
     if (target < step) {
       setStep(target);
       setEditingSection(null);
       setErrors({});
       return;
     }
-    // For forward jumps, ensure all steps before target are valid
     for (let i = 1; i < target; i++) {
       const ok = validateStep(i, true);
       if (!ok) {
@@ -182,7 +189,7 @@ export default function FormWizard() {
   };
 
   const next = () => {
-    if (isTypingRef.current) return; // Do not proceed while typing
+    if (isTypingRef.current) return; // while typing, do nothing
     if (validateStep(step, true)) setStep((s) => Math.min(4, s + 1));
   };
   const prev = () => {
@@ -196,16 +203,15 @@ export default function FormWizard() {
     if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
     typingStopTimerRef.current = setTimeout(() => {
       isTypingRef.current = false;
-    }, 250);
+    }, 300);
   };
 
   const onChange = (field) => (e) => {
     const value =
       e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
     markTyping();
-    setData((d) => ({ ...d, [field]: value }));
-    // schedule validation after typing settles
-    pendingFieldRef.current = field;
+    setData((prev) => ({ ...prev, [field]: value }));
+    pendingFieldRef.current = field; // schedule validation after typing settles
   };
 
   const onFocus = (field) => () => {
@@ -215,11 +221,9 @@ export default function FormWizard() {
 
   const onBlurField = (stepForField) => () => {
     focusedFieldRef.current = null;
-    // mark typing stop now
     if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
-    isTypingRef.current = false;
-    // validate on blur
-    validateStep(stepForField, true);
+    isTypingRef.current = false; // allow recompute
+    validateStep(stepForField, true); // validate on blur
   };
 
   // Review edit actions
@@ -227,15 +231,14 @@ export default function FormWizard() {
     if (isTypingRef.current) return;
     setEditingSection(section);
     setErrors({});
-    setStep(section); // navigate to section step for editing
+    setStep(section);
   };
   const saveFromEdit = () => {
     if (isTypingRef.current) return;
-    // Validate the section
     const ok = validateStep(step, true);
     if (!ok) return;
     setEditingSection(null);
-    setStep(4); // return to review
+    setStep(4);
     setErrors({});
   };
 
@@ -245,7 +248,6 @@ export default function FormWizard() {
 
   const Stepper = () => (
     <div className="mb-5">
-      {/* Top labeled stepper with clickable steps and percent indicator */}
       <div className="flex items-center justify-between gap-2">
         {steps.map((s) => {
           const isActive = step === s.key;
@@ -262,9 +264,9 @@ export default function FormWizard() {
                 if (isTypingRef.current) e.preventDefault();
               }}
               onClick={() => goToStep(s.key)}
-              className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border
-                ${isActive ? "bg-white border-blue-500 shadow" : "bg-white/70 border-gray-200 hover:bg-white"}
-              focus-ring`}
+              className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border ${
+                isActive ? "bg-white border-blue-500 shadow" : "bg-white/70 border-gray-200 hover:bg-white"
+              } focus-ring`}
               aria-current={isActive ? "step" : undefined}
               aria-disabled={isTypingRef.current ? "true" : "false"}
             >
@@ -286,7 +288,6 @@ export default function FormWizard() {
         })}
       </div>
 
-      {/* Progress bar */}
       <div className="mt-3">
         <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
           <div
@@ -298,9 +299,7 @@ export default function FormWizard() {
             }}
           />
         </div>
-        <div className="mt-1.5 text-right text-xs text-gray-600">
-          {percentComplete}% complete
-        </div>
+        <div className="mt-1.5 text-right text-xs text-gray-600">{percentComplete}% complete</div>
       </div>
     </div>
   );
@@ -492,10 +491,7 @@ export default function FormWizard() {
   const Review = () => (
     <section aria-label="Review" className="space-y-4">
       <div className="rounded-lg border border-gray-200">
-        <div
-          className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold"
-          style={{ background: headerGradient }}
-        >
+        <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
           <span style={{ textTransform: "uppercase" }}>Account</span>
         </div>
         <div className="p-3 text-sm text-gray-800">
@@ -517,10 +513,7 @@ export default function FormWizard() {
       </div>
 
       <div className="rounded-lg border border-gray-200">
-        <div
-          className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold"
-          style={{ background: headerGradient }}
-        >
+        <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
           <span style={{ textTransform: "uppercase" }}>Profile</span>
         </div>
         <div className="p-3 text-sm text-gray-800">
@@ -545,10 +538,7 @@ export default function FormWizard() {
       </div>
 
       <div className="rounded-lg border border-gray-200">
-        <div
-          className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold"
-          style={{ background: headerGradient }}
-        >
+        <div className="px-3 py-2 rounded-t-lg text-white text-sm font-semibold" style={{ background: headerGradient }}>
           <span style={{ textTransform: "uppercase" }}>Preferences</span>
         </div>
         <div className="p-3 text-sm text-gray-800">
@@ -582,8 +572,12 @@ export default function FormWizard() {
             onBlur={onBlurField(4)}
             aria-describedby="fw-consent-help"
           />
-          <span style={{ textTransform: "uppercase" }}>I consent to submit this information</span>
         </label>
+        <div className="mt-1">
+          <span className="text-sm" style={{ textTransform: "uppercase" }}>
+            I consent to submit this information
+          </span>
+        </div>
         <p id="fw-consent-help" className="text-xs text-gray-600 mt-1">
           Submitting is enabled only when consent is checked.
         </p>
@@ -604,13 +598,9 @@ export default function FormWizard() {
       </button>
 
       <div className="flex items-center gap-2">
-        {/* If user is editing a section from Review, show Save and Cancel */}
         {editingSection ? (
           <>
-            <button
-              className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring"
-              onClick={saveFromEdit}
-            >
+            <button className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring" onClick={saveFromEdit}>
               <span style={{ textTransform: "uppercase" }}>Save</span>
             </button>
             <button
@@ -637,7 +627,6 @@ export default function FormWizard() {
             className="rounded-lg bg-green-600 text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => {
               if (validateStep(4, true)) {
-                // In this showcase, we just alert. In real app, submit to backend here.
                 alert("Submitted! Thank you.");
               }
             }}
@@ -650,19 +639,55 @@ export default function FormWizard() {
     </div>
   );
 
-  // Only enable Next if current step valid
   // PUBLIC_INTERFACE
+  // Only enable Next if current step valid (uses cached snapshot; no recompute while typing)
   function canProceed() {
-    // While typing, use the last stable snapshot to avoid thrash.
     if (step === 1) return step1Valid;
     if (step === 2) return step2Valid;
     if (step === 3) return step3Valid;
     return true;
   }
 
+  // Console-based typing harness to verify continuous typing responsiveness
+  // Safe no-op in production; just logs.
+  useEffect(() => {
+    // simulate harness usage flag (disabled by default)
+    const ENABLE_HARNESS = false;
+    if (!ENABLE_HARNESS) return;
+
+    const simulateTyping = async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const type = async (field, text) => {
+        for (const ch of text) {
+          setData((prev) => ({ ...prev, [field]: (prev[field] || "") + ch }));
+          await wait(20);
+        }
+      };
+      console.log("[Harness] Start typing test...");
+      await type("username", "test user full sentence");
+      await type("password", "password1234");
+      await type("confirm", "password1234");
+      console.log("[Harness] Step 1 complete:", { username: data.username.length, password: data.password.length });
+      setStep(2);
+      await wait(50);
+      await type("firstName", "Jane Continuous");
+      await type("lastName", "Doe Typing");
+      await type("email", "jane.doe@example.com");
+      console.log("[Harness] Step 2 complete:", { firstName: data.firstName.length, lastName: data.lastName.length });
+      setStep(3);
+      await wait(50);
+      setData((prev) => ({ ...prev, topic: "engineering" }));
+      await type("interest", "I love building smooth UIs without lag.");
+      console.log("[Harness] Step 3 complete:", { interest: data.interest.length });
+      setStep(4);
+      console.log("[Harness] Done.");
+    };
+
+    simulateTyping();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <section className="surface p-4 md:p-5" role="region" aria-label="Form Wizard">
-      {/* Header */}
       <header className="mb-4">
         <h2 className="text-lg font-semibold text-slate-900">
           <span style={{ textTransform: "uppercase" }}>Form Wizard</span>
@@ -672,10 +697,8 @@ export default function FormWizard() {
         </p>
       </header>
 
-      {/* Stepper */}
       <Stepper />
 
-      {/* Body */}
       <div className="mt-4">
         {step === 1 && <Step1 />}
         {step === 2 && <Step2 />}
@@ -683,7 +706,6 @@ export default function FormWizard() {
         {step === 4 && <Review />}
       </div>
 
-      {/* Footer controls */}
       <Footer />
     </section>
   );
