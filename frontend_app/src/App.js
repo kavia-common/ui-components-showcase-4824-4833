@@ -67,7 +67,9 @@ function App() {
                   UI
                 </div>
                 <div className="text-white">
-                  <h1 className="text-xl font-semibold">Components Showcase</h1>
+                  <h1 className="text-xl font-semibold" style={{ textTransform: "capitalize" }}>
+                    Components Showcase
+                  </h1>
                 </div>
               </div>
 
