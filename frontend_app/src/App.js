@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import "./index.css";
 
 import Hero from "./components/Hero";
@@ -19,6 +20,7 @@ function App() {
    * - Page background: linear-gradient(87deg, #95bff0 20%, #ac7de9 80%)
    * - Header/Footer: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)
    * Tabs in header switch between component demos.
+   * "More" menu renders as a body-level overlay via portal to avoid clipping by the navbar.
    */
   const [active, setActive] = useState("hero");
 
@@ -26,6 +28,33 @@ function App() {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreBtnRef = useRef(null);
   const menuRef = useRef(null);
+
+  // Track overlay position (computed from trigger button's bounding rect)
+  const [menuPos, setMenuPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    alignRight: true,
+  });
+
+  const computeMenuPosition = useCallback(() => {
+    const btn = moreBtnRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    // Prefer aligning right edges for consistency with previous right-0 dropdown
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const preferredWidth = Math.max(220, Math.min(340, rect.width * 1.25)); // min width preserved
+    // Compute left so that right edges align, and clamp within viewport
+    let left = rect.right - preferredWidth;
+    left = Math.max(8, Math.min(left, viewportWidth - preferredWidth - 8));
+    const top = rect.bottom + 8; // small gap
+    setMenuPos({
+      top,
+      left,
+      width: preferredWidth,
+      alignRight: Math.abs(left + preferredWidth - rect.right) < 6,
+    });
+  }, []);
 
   // Top-level primary items and "more" groups
   const primaryItems = useMemo(
@@ -69,13 +98,29 @@ function App() {
         setMoreOpen(false);
       }
     };
+    const onScrollOrResize = () => {
+      if (moreOpen) computeMenuPosition();
+    };
+
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("mousedown", onClickOutside, true);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize, true);
+
+    // When opening, compute initial position
+    if (moreOpen) {
+      computeMenuPosition();
+      // next frame ensures layout stabilized
+      requestAnimationFrame(computeMenuPosition);
+    }
+
     return () => {
       window.removeEventListener("keydown", onKey, true);
       window.removeEventListener("mousedown", onClickOutside, true);
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize, true);
     };
-  }, [moreOpen]);
+  }, [moreOpen, computeMenuPosition]);
 
   // A11y: keyboard navigation for menu items (Up/Down/Enter)
   const onMenuKeyDown = useCallback((e) => {
@@ -175,22 +220,23 @@ function App() {
                       aria-haspopup="true"
                       aria-expanded={moreOpen}
                       aria-controls="more-menu"
-                      onClick={() => setMoreOpen((v) => !v)}
+                      onClick={() => {
+                        setMoreOpen((v) => {
+                          const next = !v;
+                          if (next) {
+                            setTimeout(() => computeMenuPosition(), 0);
+                          }
+                          return next;
+                        });
+                      }}
                       onKeyDown={(e) => {
-                        // Open with ArrowDown and focus first item
-                        if ((e.key === "Enter" || e.key === " ") && !moreOpen) {
+                        // Open with Enter/Space/ArrowDown and focus first item
+                        const openKeys = ["Enter", " ", "ArrowDown"];
+                        if (openKeys.includes(e.key) && !moreOpen) {
                           e.preventDefault();
                           setMoreOpen(true);
                           setTimeout(() => {
-                            const first = document.querySelector(
-                              '#more-menu [role="menuitem"]'
-                            );
-                            first?.focus();
-                          }, 0);
-                        } else if (e.key === "ArrowDown") {
-                          e.preventDefault();
-                          setMoreOpen(true);
-                          setTimeout(() => {
+                            computeMenuPosition();
                             const first = document.querySelector(
                               '#more-menu [role="menuitem"]'
                             );
@@ -206,59 +252,86 @@ function App() {
                       <span className="sr-only">, additional components</span>
                     </button>
 
-                    {/* Dropdown panel */}
-                    {moreOpen && (
-                      <div
-                        ref={menuRef}
-                        id="more-menu"
-                        role="menu"
-                        aria-label="More components"
-                        onKeyDown={onMenuKeyDown}
-                        className="absolute right-0 mt-2 min-w-[220px] rounded-xl border border-white/20 shadow-lg focus:outline-none"
-                        style={{
-                          // Semi-transparent gradient background for readability
-                          background:
-                            "linear-gradient(45deg, rgba(175,36,151,0.92) 10%, rgba(144,45,154,0.90) 20%, rgba(24,64,160,0.90) 100%)",
-                          backdropFilter: "saturate(130%) blur(6px)",
-                        }}
-                      >
-                        <ul className="py-2">
-                          {moreItems.map((it) => {
-                            const isActive = active === it.key;
-                            return (
-                              <li key={`more-${it.key}`}>
-                                <button
-                                  role="menuitem"
-                                  onClick={() => selectAndClose(it.key)}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded-lg mx-2 my-1 transition-transform focus-ring ${
-                                    isActive
-                                      ? "bg-white text-[var(--color-text)] shadow"
-                                      : "text-white/95 hover:bg-white/10"
-                                  }`}
-                                  style={{
-                                    // Subtle hover effects: scale and shadow
-                                    transition: "transform 150ms ease, box-shadow 150ms ease, background 150ms ease",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "scale(1.02)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 8px 16px rgba(0,0,0,0.18)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "scale(1)";
-                                    e.currentTarget.style.boxShadow = "none";
-                                  }}
-                                >
-                                  <span style={{ textTransform: "uppercase" }}>
-                                    {it.label}
-                                  </span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
+                    {/* Dropdown overlay via portal */}
+                    {moreOpen &&
+                      ReactDOM.createPortal(
+                        <div
+                          aria-hidden="false"
+                          style={{
+                            position: "fixed",
+                            inset: 0,
+                            zIndex: 1000, // above navbar and content
+                          }}
+                        >
+                          {/* Click-catcher backdrop for outside clicks (invisible) */}
+                          <div
+                            style={{
+                              position: "fixed",
+                              inset: 0,
+                              // transparent but ensures click capture
+                              background: "transparent",
+                            }}
+                          />
+                          {/* The actual menu panel positioned under trigger */}
+                          <div
+                            ref={menuRef}
+                            id="more-menu"
+                            role="menu"
+                            aria-label="More components"
+                            onKeyDown={onMenuKeyDown}
+                            className="rounded-xl border border-white/20 shadow-lg focus:outline-none"
+                            style={{
+                              position: "fixed",
+                              top: `${menuPos.top}px`,
+                              left: `${menuPos.left}px`,
+                              width: `${menuPos.width}px`,
+                              // Semi-transparent gradient background for readability; preserve specified gradient
+                              background:
+                                "linear-gradient(45deg, rgba(175,36,151,0.92) 10%, rgba(144,45,154,0.90) 20%, rgba(24,64,160,0.90) 100%)",
+                              backdropFilter: "saturate(130%) blur(6px)",
+                              zIndex: 1001,
+                            }}
+                          >
+                            <ul className="py-2">
+                              {moreItems.map((it) => {
+                                const isActive = active === it.key;
+                                return (
+                                  <li key={`more-${it.key}`}>
+                                    <button
+                                      role="menuitem"
+                                      onClick={() => selectAndClose(it.key)}
+                                      className={`w-full text-left px-3 py-2 text-sm rounded-lg mx-2 my-1 transition-transform focus-ring ${
+                                        isActive
+                                          ? "bg-white text-[var(--color-text)] shadow"
+                                          : "text-white/95 hover:bg-white/10"
+                                      }`}
+                                      style={{
+                                        // Subtle hover effects: scale and shadow
+                                        transition:
+                                          "transform 150ms ease, box-shadow 150ms ease, background 150ms ease",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = "scale(1.02)";
+                                        e.currentTarget.style.boxShadow =
+                                          "0 8px 16px rgba(0,0,0,0.18)";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = "scale(1)";
+                                        e.currentTarget.style.boxShadow = "none";
+                                      }}
+                                    >
+                                      <span style={{ textTransform: "uppercase" }}>
+                                        {it.label}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        </div>,
+                        document.body
+                      )}
                   </li>
                 </ul>
               </nav>
