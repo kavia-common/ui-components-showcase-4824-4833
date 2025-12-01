@@ -11,12 +11,13 @@ export default function BentoGrid() {
    * Updated tile map:
    * - Removed the first grid/tile ("hero": Dixon’s Value Proposition (EVP))
    * - Removed the L&D tile ("ld")
+   * - Removed the 'All Announcements' tile ("ann")
    * Remaining tiles keep their body content and responsive spans.
    */
   const tiles = [
     { key: "meetings", title: "Meetings", variant: "plain", spans: "col-span-12 xl:col-span-4", minH: "min-h-[170px]" },
 
-    { key: "ann", title: "All Announcements", variant: "plain", spans: "col-span-12 xl:col-span-6", minH: "min-h-[150px]" },
+    // All Announcements removed
     { key: "ceo", title: "Insights from CEO", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[180px]" },
 
     { key: "tools", title: "Toolshelf", variant: "plain", spans: "col-span-12 sm:col-span-6 xl:col-span-3", minH: "min-h-[160px]" },
@@ -47,20 +48,15 @@ export default function BentoGrid() {
   // It preserves padding/size (no layout shift) and adds smooth transitions.
   function InteractiveHover({ as: As = "div", className = "", children, title, ariaLabel, role, href, onClick, type, disabled }) {
     const baseStyle = {
-      // No base background so layout does not shift on hover.
       background: "transparent",
       transition: "background 260ms ease, filter 260ms ease",
       willChange: "background, filter",
     };
 
-    // Increase perceived lightness by ~6–8% vs current:
-    // - Bump white overlay from 0.12 → 0.18
-    // - Slightly increase brightness and saturation to keep colors lively without blowing contrast
     const hoverBackground = `linear-gradient(0deg, rgba(255,255,255,0.18), rgba(255,255,255,0.18)), ${lighterHeaderGradient}`;
 
     const handleEnter = (e) => {
       e.currentTarget.style.background = hoverBackground;
-      // Gentle boost to maintain readable contrast on text/icons
       e.currentTarget.style.filter = "brightness(1.08) saturate(1.04)";
     };
     const handleLeave = (e) => {
@@ -68,10 +64,8 @@ export default function BentoGrid() {
       e.currentTarget.style.filter = "none";
     };
 
-    // Maintain text/icon contrast on hover: ensure content has high contrast classes.
     const contrastClasses = "text-slate-900";
 
-    // Preserve padding/size: rely on the caller's padding/size classes; we do not mutate them.
     const commonProps = {
       className: `${className} ${contrastClasses}`,
       style: baseStyle,
@@ -117,7 +111,6 @@ export default function BentoGrid() {
    * - No per-tile overrides allowed
    */
   const Header = ({ id, title, actionLabel = "More", onAction, className = "", hideAction = false }) => {
-    // Capsule button styling kept; header background forced to unified gradient
     const actionBase = {
       background: `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.00) 100%), #2A4BA8`,
       boxShadow: "0 1px 2px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.10)",
@@ -157,7 +150,6 @@ export default function BentoGrid() {
               "text-white",
             ].join(" ")}
           >
-            {/* Left group: icon chip + title */}
             <div className="inline-flex items-center gap-2 min-w-0">
               <span
                 aria-hidden="true"
@@ -183,7 +175,6 @@ export default function BentoGrid() {
               </h3>
             </div>
 
-            {/* Right capsule action */}
             {!hideAction && (
               <button
                 type="button"
@@ -235,11 +226,7 @@ export default function BentoGrid() {
   };
 
   // PUBLIC_INTERFACE
-  // Helper to render tiles; body contents unchanged
   const Tile = ({ t }) => {
-    // Interactive regions inside tiles are wrapped with <InteractiveHover>
-    // so hover applies ONLY to actionable sub-cards/links/buttons.
-
     if (t.variant === "tinted-blue") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardTinted} p-4`}>
@@ -279,12 +266,10 @@ export default function BentoGrid() {
           className={`${t.spans} ${cardPlain} p-5 ${t.minH} border border-gray-200`}
         >
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="More" className="mb-4" />
-          {/* Keep same 10-count layout; add subtle default borders on interactive subtiles */}
           <div className="grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
               <InteractiveHover
                 key={i}
-                // Default 1px border (gray-200) to avoid hover layout shift; preserve rounded corners and spacing
                 className="h-10 rounded-lg bg-gray-100 transition-colors duration-200 ease-out border border-gray-200"
                 role="button"
                 ariaLabel={`Open day ${i + 1}`}
@@ -296,84 +281,7 @@ export default function BentoGrid() {
       );
     }
 
-    if (t.key === "ann") {
-      return (
-        <section
-          role="region"
-          aria-labelledby={`tile-${t.key}-title`}
-          className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}
-        >
-          {/* Keep unified header gradient and sizing */}
-          <Header
-            id={`tile-${t.key}-title`}
-            title={t.title}
-            actionLabel="Know More"
-            className="mb-1.5"
-          />
-
-          {/* Body layout: left hero + exactly 3 compact subgrid items on the right */}
-          <div className="grid grid-cols-12 gap-1.5 sm:gap-2">
-            {/* Left hero media: maintain aspect and subtle border */}
-            <InteractiveHover
-              as="a"
-              href="#"
-              title="Open announcement hero"
-              ariaLabel="Open announcement hero"
-              className="col-span-12 md:col-span-7 xl:col-span-7 rounded-lg overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
-              style={{
-                aspectRatio: "16 / 9",
-                minHeight: "90px",
-                maxHeight: "140px",
-              }}
-            >
-              <div className="w-full h-full bg-gray-100" aria-hidden="true" />
-            </InteractiveHover>
-
-            {/* Right: exactly three compact items with consistent 1px border and tight padding */}
-            <div className="col-span-12 md:col-span-5 xl:col-span-5">
-              {/* Ensure always 3 items; compact size via tighter min-height and constrained aspect */}
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                {["a", "b", "c"].map((key, idx) => (
-                  <InteractiveHover
-                    key={key}
-                    as="a"
-                    href="#"
-                    title={`Open announcement ${idx + 1}`}
-                    ariaLabel={`Open announcement ${idx + 1}`}
-                    className="rounded-md overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
-                    style={{
-                      // Taller compact items while keeping layout stable and responsive
-                      // Maintain the same aspect ratio to avoid shifts; increase min/max heights
-                      aspectRatio: "5 / 6",
-                      // Raised min-height for better visual balance and touch target
-                      minHeight: "92px",
-                      // Cap height a bit higher but still below the hero to prevent dominance
-                      maxHeight: "132px",
-                      // Avoid layout shift by keeping a stable box model
-                      padding: "0",
-                    }}
-                  >
-                    <div
-                      className="w-full h-full bg-gray-100"
-                      aria-hidden="true"
-                      style={{
-                        // Ensure internal media respects compactness
-                        objectFit: "cover",
-                      }}
-                    />
-                  </InteractiveHover>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Caption remains; spacing balanced */}
-          <p className="mt-1 text-[12px] sm:text-[13px] text-slate-700 line-clamp-1">
-            Highlights from across the organization this week.
-          </p>
-        </section>
-      );
-    }
+    // Removed 'ann' branch entirely so the tile cannot render
 
     if (t.key === "ceo") {
       return (
@@ -475,7 +383,6 @@ export default function BentoGrid() {
 
   return (
     <section aria-label="Bento Grid Dashboard" className="w-full">
-      {/* Grid reflows without gaps; remaining tiles fill rows based on spans */}
       <div
         className={[
           "grid",
