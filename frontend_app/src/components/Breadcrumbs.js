@@ -16,11 +16,12 @@ export default function Breadcrumbs() {
   const crumbs = ["Home", "Components", "Forms", "Wizard"];
   const last = crumbs.length - 1;
 
-  // Chevron separator tuned to screenshot (precise: 14x14-16x16 area, 2px stroke, neutral color)
+  // Chevron separator enlarged: bigger glyph (20x20 viewport rendered size) with 2.5px stroke for stronger presence.
+  // Keeps neutral color via currentColor and remains aria-hidden for accessibility.
   const Chevron = ({ ariaHidden = true }) => (
     <svg
-      width="16"
-      height="16"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden={ariaHidden}
@@ -30,7 +31,7 @@ export default function Breadcrumbs() {
       <path
         d="M9 6l6 6-6 6"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -169,8 +170,9 @@ export default function Breadcrumbs() {
                     className="select-none inline-flex items-center justify-center text-slate-400"
                     aria-hidden="true"
                     style={{
-                      marginLeft: 12, // exact chevron spacing
-                      marginRight: 12,
+                      // Slightly larger horizontal spacing to accommodate the bigger chevron
+                      marginLeft: 14,
+                      marginRight: 14,
                       color: "rgba(100,116,139,0.9)", // slightly darker neutral
                     }}
                   >
