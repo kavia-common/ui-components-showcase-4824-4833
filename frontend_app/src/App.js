@@ -41,18 +41,28 @@ function App() {
     const btn = moreBtnRef.current;
     if (!btn) return;
     const rect = btn.getBoundingClientRect();
-    // Prefer aligning right edges for consistency with previous right-0 dropdown
-    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-    const preferredWidth = Math.max(220, Math.min(340, rect.width * 1.25)); // min width preserved
-    // Compute left so that right edges align, and clamp within viewport
-    let left = rect.right - preferredWidth;
-    left = Math.max(8, Math.min(left, viewportWidth - preferredWidth - 8));
-    const top = rect.bottom + 8; // small gap
+    const vw = window.innerWidth || document.documentElement.clientWidth;
+
+    // Responsive max width similar to Tailwind max-w classes
+    // sm: full-bleed with margins; md+: clamp to sensible width (max-w-xl/2xl feel)
+    const maxWidth = vw >= 1280 ? 672 /* ~max-w-2xl */ :
+                     vw >= 1024 ? 560 /* ~max-w-xl */ :
+                     vw >= 768  ? 480 /* ~max-w-md/lg */ : vw - 16;
+
+    const baseWidth = Math.max(260, Math.min(360, rect.width * 1.5));
+    const width = Math.min(baseWidth, maxWidth);
+
+    // Center under trigger; clamp to viewport with small gutters
+    let left = rect.left + rect.width / 2 - width / 2;
+    const gutter = 8;
+    left = Math.max(gutter, Math.min(left, vw - width - gutter));
+    const top = rect.bottom + 8;
+
     setMenuPos({
       top,
       left,
-      width: preferredWidth,
-      alignRight: Math.abs(left + preferredWidth - rect.right) < 6,
+      width,
+      alignRight: false,
     });
   }, []);
 
@@ -166,11 +176,11 @@ function App() {
               "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
           }}
         >
-          <div className="mx-auto max-w-[88rem] px-4 py-4">
+          <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4">
             {/* Single-row navbar: brand left, items right; wraps on narrow screens */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              {/* Brand / App name - left aligned */}
-              <div className="flex items-center gap-3 min-w-[12rem]">
+              {/* Brand / App name - left aligned with side spacing */}
+              <div className="flex items-center gap-3 min-w-[12rem] pr-2 md:pr-3">
                 <div
                   className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold"
                   aria-hidden="true"
@@ -179,7 +189,7 @@ function App() {
                 </div>
                 <div className="text-white">
                   <h1
-                    className="text-xl font-semibold"
+                    className="text-xl font-semibold tracking-wide"
                     style={{ textTransform: "uppercase" }}
                   >
                     Components Showcase
@@ -187,19 +197,19 @@ function App() {
                 </div>
               </div>
 
-              {/* Component nav items - right aligned */}
+              {/* Component nav items - right aligned with horizontal padding to avoid edge-to-edge */}
               <nav
-                className="flex-1 overflow-x-auto"
+                className="flex-1 overflow-x-auto pl-1 md:pl-2"
                 aria-label="Component navigation"
               >
-                <ul className="flex items-center justify-end gap-2">
+                <ul className="flex items-center justify-end gap-2 md:gap-2.5 lg:gap-3">
                   {primaryItems.map((it) => {
                     const isActive = active === it.key;
                     return (
                       <li key={it.key}>
                         <button
                           onClick={() => setActive(it.key)}
-                          className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring
+                          className={`px-3 sm:px-4 md:px-5 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring
                             ${
                               isActive
                                 ? "bg-white text-[var(--color-text)] shadow"
@@ -244,7 +254,7 @@ function App() {
                           }, 0);
                         }
                       }}
-                      className={`px-3 sm:px-4 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
+                      className={`px-3 sm:px-4 md:px-5 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
                         moreOpen ? "bg-white text-[var(--color-text)] shadow" : "text-white/90 hover:bg-white/10"
                       }`}
                     >
@@ -285,6 +295,7 @@ function App() {
                               top: `${menuPos.top}px`,
                               left: `${menuPos.left}px`,
                               width: `${menuPos.width}px`,
+                              maxWidth: "90vw",
                               // Semi-transparent gradient background for readability; preserve specified gradient
                               background:
                                 "linear-gradient(45deg, rgba(175,36,151,0.92) 10%, rgba(144,45,154,0.90) 20%, rgba(24,64,160,0.90) 100%)",
@@ -292,7 +303,7 @@ function App() {
                               zIndex: 1001,
                             }}
                           >
-                            <ul className="py-2">
+                            <ul className="py-2 px-1 sm:px-2">
                               {moreItems.map((it) => {
                                 const isActive = active === it.key;
                                 return (
@@ -340,7 +351,7 @@ function App() {
         </header>
 
         {/* Main container */}
-        <main className="mx-auto max-w-7xl w-full flex-1 px-4 py-6 space-y-6">
+        <main className="container mx-auto max-w-7xl w-full flex-1 px-4 md:px-6 lg:px-8 py-6 space-y-6">
           {active === "hero" && <Hero />}
           {active === "accordion" && <Accordion />}
           {active === "bento" && <BentoGrid />}
