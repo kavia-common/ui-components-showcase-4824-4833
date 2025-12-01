@@ -218,20 +218,21 @@ export default function BentoGrid() {
             className="mb-2"
             dense
           />
-          {/* Compact media grid to reduce vertical height */}
+          {/* Reduced body height while keeping header unchanged */}
           <div className="grid grid-cols-12 gap-2">
-            {/* Main media uses a shorter aspect to constrain height */}
+            {/* Main media uses even shorter aspect to constrain height */}
             <div
-              className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/10] sm:aspect-[16/10] md:aspect-[16/10]"
+              className="col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/8] sm:aspect-[16/8] md:aspect-[16/8]"
               aria-hidden="true"
             />
             <div className="col-span-4 grid grid-rows-3 gap-1.5">
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/11]" aria-hidden="true" />
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/11]" aria-hidden="true" />
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/11]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/10]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/10]" aria-hidden="true" />
+              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/10]" aria-hidden="true" />
             </div>
           </div>
-          <p className="mt-1.5 text-[13px] md:text-sm text-slate-600">
+          {/* Tighten spacing and clamp caption to avoid extra height */}
+          <p className="mt-1 text-[13px] md:text-sm text-slate-600 line-clamp-1">
             Highlights from across the organization this week.
           </p>
         </section>
