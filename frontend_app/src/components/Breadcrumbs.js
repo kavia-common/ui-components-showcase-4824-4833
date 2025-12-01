@@ -3,43 +3,17 @@ import React from "react";
 /**
  * PUBLIC_INTERFACE
  * Breadcrumbs
- * Implements pixel-precise styling aligned to the latest screenshot while preserving
- * semantics and accessibility (nav/ol/li and aria-current on the last item).
- *
- * Visual specifics applied:
- * - Card: white surface, 16px radius, 1px border rgba(17,24,39,0.08), soft shadow 0 6px 20px rgba(0,0,0,0.08)
- * - Padding: vertical 10px, horizontal 16px (py-2.5 px-4)
- * - Separators: chevron size 16px, stroke 2px, color slate-400 at 86% opacity, horizontal spacing 8px (mx-2)
- * - Link items (non-current): 13–14px, 500, letter-spacing ~0.2px; slate-700 default to slate-900 on hover; underline on hover
- * - Current item: bold 700 inside a white chip with 1px border rgba(17,24,39,0.10), subtle shadow, pill padding px-10px (~px-2.5)/py-8px (~py-2)
- *   plus a 6px gradient accent dot at the leading edge
- * - Focus: visible ring without layout shift: 2px ring with 2px offset in an indigo/cyan hue
+ * Ocean Professional-styled breadcrumb navigation. Applies white surface over light canvas,
+ * 1px subtle border, soft shadow, rounded-xl radius, and balanced padding (px-4 py-2.5).
+ * Links use primary (#2563EB) with hover underline and accessible focus ring. Current item is
+ * non-link, neutral/darker text with semibold weight. Separators are subtle slate chevrons.
  */
 export default function Breadcrumbs() {
-  // Example path; in an app this would reflect router state
+  // Example path; in a real app this would be derived from the router.
   const crumbs = ["Home", "Components", "Forms", "Wizard"];
   const last = crumbs.length - 1;
 
-  // Accent gradient for the current item dot (matches app’s unified gradient)
-  const ACCENT_GRADIENT =
-    "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
-
-  // Container/card style exactness
-  const cardStyle = {
-    background: "#FFFFFF",
-    borderRadius: 16,
-    border: "1px solid rgba(17,24,39,0.08)",
-    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-  };
-
-  // Current item chip style
-  const currentChipStyle = {
-    background: "#FFFFFF",
-    border: "1px solid rgba(17,24,39,0.10)",
-    boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
-  };
-
-  // Chevron separator: parent sets color via currentColor
+  // Chevron separator: inherits color from parent
   const Chevron = ({ ariaHidden = true }) => (
     <svg
       width="16"
@@ -61,50 +35,49 @@ export default function Breadcrumbs() {
   );
 
   // PUBLIC_INTERFACE
-  // Render a single crumb; keeps focus-ring and hover states aligned to spec
+  // Renders a single crumb with keyboard-accessible focus ring for links.
   function Crumb({ label, isLast }) {
-    const type = "text-[13px] sm:text-[14px] tracking-[0.0125em]";
-    const linkBase =
-      "px-[2px] py-[2px] rounded-[10px] font-medium text-slate-700 transition-colors";
-    const linkHover = "hover:text-slate-900 hover:underline underline-offset-2 decoration-slate-400/60";
-    const focusVisible =
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500/60";
+    const baseType = "text-[13px] sm:text-[14px] tracking-[0.01em]";
+
+    // Link styling per theme: primary color with hover underline, accessible focus ring
+    const linkClasses = [
+      baseType,
+      "font-medium",
+      "text-[var(--color-primary)]",
+      "hover:underline underline-offset-2 decoration-blue-400/70",
+      "px-0.5 py-0.5 rounded-md",
+      "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-white",
+      "transition-colors",
+    ].join(" ");
+
+    // Current item: non-link, neutral/darker text with semibold weight
+    const currentClasses = [
+      "inline-flex items-center",
+      "text-slate-800",
+      "font-semibold",
+      baseType,
+    ].join(" ");
 
     if (!isLast) {
       return (
-        <a href="#" className={[type, linkBase, linkHover, focusVisible].join(" ")}>
+        <a href="#" className={linkClasses}>
           {label}
         </a>
       );
     }
 
     return (
-      <span
-        aria-current="page"
-        title={label}
-        className={[
-          "inline-flex items-center gap-2",
-          "font-bold text-slate-900",
-          "rounded-full",
-          "px-[10px] py-[8px]",
-          type,
-        ].join(" ")}
-        style={currentChipStyle}
-      >
-        <span
-          aria-hidden="true"
-          className="inline-block h-[6px] w-[6px] rounded-full"
-          style={{ background: ACCENT_GRADIENT }}
-        />
-        <span>{label}</span>
+      <span aria-current="page" className={currentClasses}>
+        {label}
       </span>
     );
   }
 
   return (
     <nav aria-label="Breadcrumb">
-      <div className="shadow-soft" style={cardStyle}>
-        <ol className="flex flex-wrap items-center py-2.5 px-4">
+      {/* White surface card with subtle border and soft shadow over light canvas */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-soft">
+        <ol className="flex flex-wrap items-center px-4 py-2.5">
           {crumbs.map((label, i) => {
             const isLast = i === last;
             return (
@@ -112,9 +85,8 @@ export default function Breadcrumbs() {
                 <Crumb label={label} isLast={isLast} />
                 {i < last && (
                   <span
-                    className="mx-2 select-none inline-flex items-center justify-center"
+                    className="mx-2 select-none inline-flex items-center justify-center text-slate-400/70"
                     aria-hidden="true"
-                    style={{ color: "rgba(148,163,184,0.86)" }}
                   >
                     <Chevron />
                   </span>
