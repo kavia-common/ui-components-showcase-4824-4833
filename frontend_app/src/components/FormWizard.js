@@ -256,13 +256,17 @@ export default function FormWizard() {
               <button
                 key={`stepper-${s.key}`}
                 type="button"
-                onClick={() => setStep(s.key)}
+                onClick={(e) => {
+                  if (e && e.preventDefault) e.preventDefault();
+                  setStep(s.key);
+                }}
                 className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border ${
                   isActive
                     ? "bg-white border-blue-500 shadow"
                     : "bg-white/70 border-gray-200 hover:bg-white"
                 } focus-ring`}
                 aria-current={isActive ? "step" : undefined}
+                aria-label={s.label}
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -831,7 +835,11 @@ export default function FormWizard() {
                   <button
                     type="button"
                     className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
-                    onClick={() => setStep((s) => Math.max(1, s - 1))}
+                    onClick={(e) => {
+                      if (e && e.preventDefault) e.preventDefault();
+                      setStep((s) => Math.max(1, s - 1));
+                    }}
+                    aria-label="Back"
                   >
                     <span style={{ textTransform: "uppercase" }}>Back</span>
                   </button>
@@ -844,14 +852,19 @@ export default function FormWizard() {
                     <button
                       type="button"
                       className="rounded-lg bg-secondary text-white px-4 py-2 hover:opacity-95 focus-ring"
-                      onClick={saveFromEdit}
+                      onClick={(e) => {
+                        // Prevent any default form actions if embedded elsewhere
+                        if (e && e.preventDefault) e.preventDefault();
+                        saveFromEdit();
+                      }}
                     >
                       <span style={{ textTransform: "uppercase" }}>Save</span>
                     </button>
                     <button
                       type="button"
                       className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
-                      onClick={() => {
+                      onClick={(e) => {
+                        if (e && e.preventDefault) e.preventDefault();
                         setEditingSection(null);
                         setStep(4);
                       }}
@@ -863,8 +876,13 @@ export default function FormWizard() {
                   <button
                     type="button"
                     className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring"
-                    onClick={() => setStep((s) => Math.min(4, s + 1))}
+                    onClick={(e) => {
+                      // Ensure no implicit submit occurs on Enter keypresses in inputs
+                      if (e && e.preventDefault) e.preventDefault();
+                      setStep((s) => Math.min(4, s + 1));
+                    }}
                     style={{ background: headerGradient }}
+                    aria-label="Next"
                   >
                     <span style={{ textTransform: "uppercase" }}>Next</span>
                   </button>
@@ -887,6 +905,7 @@ export default function FormWizard() {
                     }}
                     disabled={!isFormValid}
                     style={{ background: headerGradient }}
+                    aria-label="Submit"
                   >
                     <span style={{ textTransform: "uppercase" }}>Submit</span>
                   </button>
