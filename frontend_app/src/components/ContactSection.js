@@ -78,7 +78,7 @@ export default function ContactSection() {
             />
           </div>
           {show("name") && (
-            <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+            <p className="mt-1 text-xs text-red-600" role="alert">{errors.name}</p>
           )}
         </div>
 
@@ -103,7 +103,7 @@ export default function ContactSection() {
             />
           </div>
           {show("email") && (
-            <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            <p className="mt-1 text-xs text-red-600" role="alert">{errors.email}</p>
           )}
         </div>
 
@@ -127,7 +127,7 @@ export default function ContactSection() {
             />
           </div>
           {show("message") && (
-            <p className="mt-1 text-xs text-red-600">{errors.message}</p>
+            <p className="mt-1 text-xs text-red-600" role="alert">{errors.message}</p>
           )}
         </div>
 
@@ -141,7 +141,7 @@ export default function ContactSection() {
             <span style={{ textTransform: "uppercase" }}>Send</span>
           </button>
           {submitted && (
-            <span className="ml-3 text-sm text-green-700">
+            <span className="ml-3 text-sm text-green-700" role="status" aria-live="polite">
               Thanks! We’ve received your message.
             </span>
           )}

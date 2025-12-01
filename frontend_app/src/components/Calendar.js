@@ -125,9 +125,11 @@ export default function Calendar() {
                 type="button"
                 role="gridcell"
                 aria-selected={isSel || undefined}
+                aria-current={isToday(d) ? "date" : undefined}
+                aria-pressed={isSel || undefined}
                 className={`h-10 rounded-lg w-full text-sm focus-ring ${
                   d ? "bg-white border border-gray-200" : "bg-transparent"
-                } ${isSel ? "ring-2 ring-indigo-400/60" : ""}`}
+                } ${isSel ? "ring-2 ring-indigo-400/60" : ""} ${!d ? "cursor-not-allowed opacity-50" : "hover:border-indigo-200"}`}
                 onKeyDown={(e) => onKeyDown(e, i)}
                 onClick={() => d && setSelected(d)}
                 disabled={!d}

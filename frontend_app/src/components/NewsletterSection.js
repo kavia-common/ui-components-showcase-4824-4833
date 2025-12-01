@@ -72,10 +72,10 @@ export default function NewsletterSection() {
         </p>
 
         {touched && !isValid && (
-          <p className="mt-2 text-xs text-red-600">Enter a valid email address.</p>
+          <p className="mt-2 text-xs text-red-600" role="alert">Enter a valid email address.</p>
         )}
         {submitted && isValid && (
-          <p className="mt-2 text-xs text-green-700">Thanks! You’re subscribed.</p>
+          <p className="mt-2 text-xs text-green-700" role="status" aria-live="polite">Thanks! You’re subscribed.</p>
         )}
       </form>
     </section>

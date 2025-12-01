@@ -23,22 +23,24 @@ export default function LogoClouds() {
           Great companies use these UI patterns.
         </p>
       </header>
-      <div className="surface p-4">
+      <div className="surface p-4" style={{ backgroundImage: "linear-gradient(180deg, rgba(99,102,241,0.06), rgba(255,255,255,0))" }}>
         <ul className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
           {logos.map((name) => (
             <li key={name}>
               <div
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 select-none transition-all"
-                style={{ filter: "grayscale(1)" }}
+                style={{ filter: "grayscale(1)", transform: "scale(1)" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.filter = "grayscale(0)";
                   e.currentTarget.style.background = gradient;
                   e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.transform = "scale(1.05)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.filter = "grayscale(1)";
                   e.currentTarget.style.background = "#fff";
                   e.currentTarget.style.color = "#6b7280";
+                  e.currentTarget.style.transform = "scale(1)";
                 }}
               >
                 <span style={{ textTransform: "uppercase" }}>{name}</span>

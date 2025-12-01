@@ -87,19 +87,19 @@ export default function DataTable() {
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="bg-gray-50/60 sticky top-0 z-10">
               <tr className="text-left text-slate-600">
-                <th className="px-3 py-2">ID</th>
-                <th className="px-3 py-2">Name</th>
-                <th className="px-3 py-2">Role</th>
-                <th className="px-3 py-2">Team</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide text-xs">ID</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide text-xs">Name</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide text-xs">Role</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide text-xs">Team</th>
               </tr>
             </thead>
             <tbody>
-              {pageRows.map((r) => (
+              {pageRows.map((r, idx) => (
                 <tr
                   key={r.id}
-                  className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
+                  className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} border-t border-gray-200 hover:bg-indigo-50/40 transition-colors`}
                 >
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2">{r.name}</td>
@@ -109,8 +109,11 @@ export default function DataTable() {
               ))}
               {pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-500">
-                    No results
+                  <td colSpan={4} className="px-3 py-10 text-center">
+                    <div className="text-slate-500">
+                      <p className="text-sm">No results found.</p>
+                      <p className="text-xs mt-1">Try a different search or clear filters.</p>
+                    </div>
                   </td>
                 </tr>
               )}
