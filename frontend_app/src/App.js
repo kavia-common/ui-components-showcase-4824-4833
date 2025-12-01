@@ -37,21 +37,29 @@ function App() {
   const openChat = useCallback(() => setChatbotOpen(true), []);
   const closeChat = useCallback(() => setChatbotOpen(false), []);
 
-  // Track "More" dropdown open state and anchor/refs for a11y keyboard navigation
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreBtnRef = useRef(null);
-  const menuRef = useRef(null);
+  // Track dropdown open states and anchor/refs for a11y keyboard navigation
+  const [list1Open, setList1Open] = useState(false);
+  const [list2Open, setList2Open] = useState(false);
+  const moreOpen = list1Open || list2Open; // legacy aggregate for effects
+  const list1BtnRef = useRef(null);
+  const list2BtnRef = useRef(null);
+  const menu1Ref = useRef(null);
+  const menu2Ref = useRef(null);
 
   // Track overlay position (computed from trigger button's bounding rect)
-  const [menuPos, setMenuPos] = useState({
+  const [menu1Pos, setMenu1Pos] = useState({
     top: 0,
     left: 0,
     width: 0,
-    alignRight: true,
+  });
+  const [menu2Pos, setMenu2Pos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
   });
 
-  const computeMenuPosition = useCallback(() => {
-    const btn = moreBtnRef.current;
+  const computeMenuPosition = useCallback((which = "list1") => {
+    const btn = which === "list2" ? list2BtnRef.current : list1BtnRef.current;
     if (!btn) return;
     const rect = btn.getBoundingClientRect();
     const vw = window.innerWidth || document.documentElement.clientWidth;
@@ -71,12 +79,12 @@ function App() {
     left = Math.max(gutter, Math.min(left, vw - width - gutter));
     const top = rect.bottom + 8;
 
-    setMenuPos({
-      top,
-      left,
-      width,
-      alignRight: false,
-    });
+    const pos = { top, left, width };
+    if (which === "list2") {
+      setMenu2Pos(pos);
+    } else {
+      setMenu1Pos(pos);
+    }
   }, []);
 
   // Top-level primary items and "more" groups
@@ -90,22 +98,27 @@ function App() {
     []
   );
 
-  // Items that go inside More dropdown
-  const moreItems = useMemo(
+  // Items that go inside dropdowns
+  const list1Items = useMemo(
     () => [
       { key: "carousel", label: "Carousel" },
       { key: "wizard", label: "Form Wizard" },
       { key: "testimonial", label: "Testimonial" },
       { key: "toast", label: "Toast" },
       { key: "pricing", label: "Pricing" },
-      { key: "newsletter", label: "Newsletter" },
       { key: "contact", label: "Contact" },
-      { key: "team", label: "Team" },
-      { key: "logos", label: "Logo Clouds" },
       { key: "calendar", label: "Calendar" },
       { key: "datatable", label: "Data Table" },
-      // Keep Chatbot listed as a component entry (page/section), not an inline widget
       { key: "chatbot", label: "Chatbot" },
+    ],
+    []
+  );
+
+  const list2Items = useMemo(
+    () => [
+      { key: "newsletter", label: "Newsletter" },
+      { key: "team", label: "Team" },
+      { key: "logos", label: "Logo Clouds" },
     ],
     []
   );
@@ -114,23 +127,27 @@ function App() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
-        setMoreOpen(false);
-        // Return focus to the More button for accessibility
-        moreBtnRef.current?.focus();
+        setList1Open(false);
+        setList2Open(false);
+        // Return focus to whichever button was last focused
+        if (document.activeElement === document.body || document.activeElement == null) {
+          list1BtnRef.current?.focus();
+        }
       }
     };
     const onClickOutside = (e) => {
-      if (!menuRef.current) return;
-      if (
-        moreOpen &&
-        !menuRef.current.contains(e.target) &&
-        !moreBtnRef.current?.contains(e.target)
-      ) {
-        setMoreOpen(false);
+      const inMenu1 = menu1Ref.current?.contains(e.target);
+      const inMenu2 = menu2Ref.current?.contains(e.target);
+      const inBtn1 = list1BtnRef.current?.contains(e.target);
+      const inBtn2 = list2BtnRef.current?.contains(e.target);
+      if (!(inMenu1 || inMenu2 || inBtn1 || inBtn2)) {
+        setList1Open(false);
+        setList2Open(false);
       }
     };
     const onScrollOrResize = () => {
-      if (moreOpen) computeMenuPosition();
+      if (list1Open) computeMenuPosition("list1");
+      if (list2Open) computeMenuPosition("list2");
     };
 
     window.addEventListener("keydown", onKey, true);
@@ -138,11 +155,13 @@ function App() {
     window.addEventListener("scroll", onScrollOrResize, true);
     window.addEventListener("resize", onScrollOrResize, true);
 
-    // When opening, compute initial position
-    if (moreOpen) {
-      computeMenuPosition();
-      // next frame ensures layout stabilized
-      requestAnimationFrame(computeMenuPosition);
+    if (list1Open) {
+      computeMenuPosition("list1");
+      requestAnimationFrame(() => computeMenuPosition("list1"));
+    }
+    if (list2Open) {
+      computeMenuPosition("list2");
+      requestAnimationFrame(() => computeMenuPosition("list2"));
     }
 
     return () => {
@@ -151,11 +170,12 @@ function App() {
       window.removeEventListener("scroll", onScrollOrResize, true);
       window.removeEventListener("resize", onScrollOrResize, true);
     };
-  }, [moreOpen, computeMenuPosition]);
+  }, [list1Open, list2Open, computeMenuPosition]);
 
   // A11y: keyboard navigation for menu items (Up/Down/Enter)
-  const onMenuKeyDown = useCallback((e) => {
-    const items = menuRef.current?.querySelectorAll('[role="menuitem"]');
+  const onMenuKeyDown = useCallback((e, which = "list1") => {
+    const menuEl = which === "list2" ? menu2Ref.current : menu1Ref.current;
+    const items = menuEl?.querySelectorAll('[role="menuitem"]');
     if (!items || items.length === 0) return;
     const currentIndex = Array.from(items).findIndex((el) => el === document.activeElement);
     if (e.key === "ArrowDown") {
@@ -177,7 +197,8 @@ function App() {
 
   const selectAndClose = useCallback((key) => {
     setActive(key);
-    setMoreOpen(false);
+    setList1Open(false);
+    setList2Open(false);
   }, []);
 
   return (
@@ -244,72 +265,59 @@ function App() {
                     );
                   })}
 
-                  {/* More dropdown */}
+                  {/* List 1 dropdown (renamed from More) */}
                   <li
                     className="relative"
                     onMouseEnter={() => {
-                      // Hover opens (desktop)
-                      setMoreOpen(true);
-                      computeMenuPosition();
+                      setList1Open(true);
+                      computeMenuPosition("list1");
                     }}
-                    onMouseLeave={(e) => {
-                      // Close when pointer leaves trigger+menu region
-                      setMoreOpen(false);
-                    }}
+                    onMouseLeave={() => setList1Open(false)}
                   >
                     <button
-                      ref={moreBtnRef}
+                      ref={list1BtnRef}
                       aria-haspopup="true"
-                      aria-expanded={moreOpen}
-                      aria-controls="more-menu"
+                      aria-expanded={list1Open}
+                      aria-controls="list1-menu"
                       onClick={() => {
-                        // Mobile/touch toggle behavior
-                        setMoreOpen((v) => {
+                        setList1Open((v) => {
                           const next = !v;
-                          if (next) {
-                            setTimeout(() => computeMenuPosition(), 0);
-                          }
+                          if (next) setTimeout(() => computeMenuPosition("list1"), 0);
                           return next;
                         });
+                        setList2Open(false);
                       }}
                       onFocus={() => {
-                        // Focus opens; keeps keyboard accessibility
-                        setMoreOpen(true);
-                        computeMenuPosition();
+                        setList1Open(true);
+                        computeMenuPosition("list1");
                       }}
                       onBlur={(e) => {
-                        // If focus leaves both trigger and menu, close
                         const related = e.relatedTarget;
-                        const insideTrigger = moreBtnRef.current?.contains(related);
-                        const insideMenu = menuRef.current?.contains(related);
-                        if (!insideTrigger && !insideMenu) setMoreOpen(false);
+                        const inTrigger = list1BtnRef.current?.contains(related);
+                        const inMenu = menu1Ref.current?.contains(related);
+                        if (!inTrigger && !inMenu) setList1Open(false);
                       }}
                       onKeyDown={(e) => {
-                        // Open with Enter/Space/ArrowDown and focus first item
                         const openKeys = ["Enter", " ", "ArrowDown"];
-                        if (openKeys.includes(e.key) && !moreOpen) {
+                        if (openKeys.includes(e.key) && !list1Open) {
                           e.preventDefault();
-                          setMoreOpen(true);
+                          setList1Open(true);
                           setTimeout(() => {
-                            computeMenuPosition();
-                            const first = document.querySelector(
-                              '#more-menu [role="menuitem"]'
-                            );
+                            computeMenuPosition("list1");
+                            const first = document.querySelector('#list1-menu [role="menuitem"]');
                             first?.focus();
                           }, 0);
                         } else if (e.key === "Escape") {
-                          // ESC closes and return focus to trigger
                           e.stopPropagation();
-                          setMoreOpen(false);
-                          requestAnimationFrame(() => moreBtnRef.current?.focus());
+                          setList1Open(false);
+                          requestAnimationFrame(() => list1BtnRef.current?.focus());
                         }
                       }}
                       className={`inline-flex items-center gap-1.5 px-3 sm:px-4 md:px-5 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
-                        moreOpen ? "bg-white text-[var(--color-text)] shadow" : "text-white/90 hover:bg-white/10"
+                        list1Open ? "bg-white text-[var(--color-text)] shadow" : "text-white/90 hover:bg-white/10"
                       }`}
                     >
-                      <span style={{ textTransform: "uppercase" }}>More</span>
-                      {/* Down-arrow icon */}
+                      <span style={{ textTransform: "uppercase" }}>List 1</span>
                       <svg
                         width="14"
                         height="14"
@@ -318,7 +326,7 @@ function App() {
                         xmlns="http://www.w3.org/2000/svg"
                         aria-hidden="true"
                         className={`transition-transform duration-150 ease-out ${
-                          moreOpen ? "rotate-180" : "rotate-0"
+                          list1Open ? "rotate-180" : "rotate-0"
                         }`}
                       >
                         <path
@@ -332,82 +340,58 @@ function App() {
                       <span className="sr-only">, additional components</span>
                     </button>
 
-                    {/* Dropdown overlay via portal */}
-                    {moreOpen &&
+                    {list1Open &&
                       ReactDOM.createPortal(
                         <div
                           aria-hidden="false"
-                          style={{
-                            position: "fixed",
-                            inset: 0,
-                            zIndex: 1000, // above navbar and content
-                          }}
-                          // Outside click closes
+                          style={{ position: "fixed", inset: 0, zIndex: 1000 }}
                           onMouseDown={(e) => {
-                            const inMenu = menuRef.current?.contains(e.target);
-                            const inButton = moreBtnRef.current?.contains(e.target);
-                            if (!inMenu && !inButton) {
-                              setMoreOpen(false);
-                            }
+                            const inMenu = menu1Ref.current?.contains(e.target);
+                            const inButton = list1BtnRef.current?.contains(e.target);
+                            if (!inMenu && !inButton) setList1Open(false);
                           }}
                         >
-                          {/* Click-catcher backdrop for outside clicks (invisible) */}
+                          <div style={{ position: "fixed", inset: 0, background: "transparent" }} />
                           <div
-                            style={{
-                              position: "fixed",
-                              inset: 0,
-                              background: "transparent",
-                            }}
-                          />
-                          {/* The actual menu panel positioned under trigger */}
-                          <div
-                            ref={menuRef}
-                            id="more-menu"
+                            ref={menu1Ref}
+                            id="list1-menu"
                             role="menu"
-                            aria-label="More components"
+                            aria-label="List 1 components"
                             onKeyDown={(e) => {
                               if (e.key === "Escape") {
                                 e.stopPropagation();
-                                setMoreOpen(false);
-                                requestAnimationFrame(() =>
-                                  moreBtnRef.current?.focus()
-                                );
+                                setList1Open(false);
+                                requestAnimationFrame(() => list1BtnRef.current?.focus());
                               } else {
-                                onMenuKeyDown(e);
+                                onMenuKeyDown(e, "list1");
                               }
                             }}
                             tabIndex={-1}
                             className="rounded-xl border border-white/20 shadow-lg focus:outline-none"
                             style={{
                               position: "fixed",
-                              top: `${menuPos.top}px`,
-                              left: `${menuPos.left}px`,
-                              width: `${menuPos.width}px`,
+                              top: `${menu1Pos.top}px`,
+                              left: `${menu1Pos.left}px`,
+                              width: `${menu1Pos.width}px`,
                               maxWidth: "90vw",
-                              // Semi-transparent gradient background for readability; preserve specified gradient
                               background:
                                 "linear-gradient(45deg, rgba(175,36,151,0.92) 10%, rgba(144,45,154,0.90) 20%, rgba(24,64,160,0.90) 100%)",
                               backdropFilter: "saturate(130%) blur(6px)",
                               zIndex: 1001,
                             }}
                             onFocusOut={(e) => {
-                              // Close when focus leaves trigger+menu region
                               const related = e.relatedTarget;
-                              const inTrigger = moreBtnRef.current?.contains(related);
-                              const inMenu = menuRef.current?.contains(related);
-                              if (!inTrigger && !inMenu) setMoreOpen(false);
+                              const inTrigger = list1BtnRef.current?.contains(related);
+                              const inMenu = menu1Ref.current?.contains(related);
+                              if (!inTrigger && !inMenu) setList1Open(false);
                             }}
-                            onMouseLeave={() => {
-                              // Pointer moving out of menu (and li wrapper's onMouseLeave handles region exit)
-                              // Ensure it closes in case pointer leaves from panel side.
-                              setMoreOpen(false);
-                            }}
+                            onMouseLeave={() => setList1Open(false)}
                           >
                             <ul className="py-2 px-1 sm:px-2">
-                              {moreItems.map((it) => {
+                              {list1Items.map((it) => {
                                 const isActive = active === it.key;
                                 return (
-                                  <li key={`more-${it.key}`}>
+                                  <li key={`list1-${it.key}`}>
                                     <button
                                       role="menuitem"
                                       onClick={() => selectAndClose(it.key)}
@@ -418,39 +402,196 @@ function App() {
                                         }
                                       }}
                                       onBlur={(e) => {
-                                        // If focus leaves menu entirely, close
                                         const related = e.relatedTarget;
-                                        const inMenu =
-                                          menuRef.current?.contains(related);
-                                        const inTrigger =
-                                          moreBtnRef.current?.contains(related);
-                                        if (!inMenu && !inTrigger) {
-                                          setMoreOpen(false);
-                                        }
+                                        const inMenu = menu1Ref.current?.contains(related);
+                                        const inTrigger = list1BtnRef.current?.contains(related);
+                                        if (!inMenu && !inTrigger) setList1Open(false);
                                       }}
                                       className={`w-full text-left px-3 py-2 text-sm rounded-lg mx-2 my-1 transition-transform focus-ring ${
-                                        isActive
-                                          ? "bg-white text-[var(--color-text)] shadow"
-                                          : "text-white/95 hover:bg-white/10"
+                                        isActive ? "bg-white text-[var(--color-text)] shadow" : "text-white/95 hover:bg-white/10"
                                       }`}
                                       style={{
-                                        // Subtle hover effects: scale and shadow
-                                        transition:
-                                          "transform 150ms ease, box-shadow 150ms ease, background 150ms ease",
+                                        transition: "transform 150ms ease, box-shadow 150ms ease, background 150ms ease",
                                       }}
                                       onMouseEnter={(e) => {
                                         e.currentTarget.style.transform = "scale(1.02)";
-                                        e.currentTarget.style.boxShadow =
-                                          "0 8px 16px rgba(0,0,0,0.18)";
+                                        e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.18)";
                                       }}
                                       onMouseLeave={(e) => {
                                         e.currentTarget.style.transform = "scale(1)";
                                         e.currentTarget.style.boxShadow = "none";
                                       }}
                                     >
-                                      <span style={{ textTransform: "uppercase" }}>
-                                        {it.label}
-                                      </span>
+                                      <span style={{ textTransform: "uppercase" }}>{it.label}</span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        </div>,
+                        document.body
+                      )}
+                  </li>
+
+                  {/* List 2 dropdown */}
+                  <li
+                    className="relative"
+                    onMouseEnter={() => {
+                      setList2Open(true);
+                      computeMenuPosition("list2");
+                    }}
+                    onMouseLeave={() => setList2Open(false)}
+                  >
+                    <button
+                      ref={list2BtnRef}
+                      aria-haspopup="true"
+                      aria-expanded={list2Open}
+                      aria-controls="list2-menu"
+                      onClick={() => {
+                        setList2Open((v) => {
+                          const next = !v;
+                          if (next) setTimeout(() => computeMenuPosition("list2"), 0);
+                          return next;
+                        });
+                        setList1Open(false);
+                      }}
+                      onFocus={() => {
+                        setList2Open(true);
+                        computeMenuPosition("list2");
+                      }}
+                      onBlur={(e) => {
+                        const related = e.relatedTarget;
+                        const inTrigger = list2BtnRef.current?.contains(related);
+                        const inMenu = menu2Ref.current?.contains(related);
+                        if (!inTrigger && !inMenu) setList2Open(false);
+                      }}
+                      onKeyDown={(e) => {
+                        const openKeys = ["Enter", " ", "ArrowDown"];
+                        if (openKeys.includes(e.key) && !list2Open) {
+                          e.preventDefault();
+                          setList2Open(true);
+                          setTimeout(() => {
+                            computeMenuPosition("list2");
+                            const first = document.querySelector('#list2-menu [role="menuitem"]');
+                            first?.focus();
+                          }, 0);
+                        } else if (e.key === "Escape") {
+                          e.stopPropagation();
+                          setList2Open(false);
+                          requestAnimationFrame(() => list2BtnRef.current?.focus());
+                        }
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 sm:px-4 md:px-5 py-2 rounded-full text-sm transition-all backdrop-blur focus-ring ${
+                        list2Open ? "bg-white text-[var(--color-text)] shadow" : "text-white/90 hover:bg-white/10"
+                      }`}
+                    >
+                      <span style={{ textTransform: "uppercase" }}>List 2</span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        className={`transition-transform duration-150 ease-out ${
+                          list2Open ? "rotate-180" : "rotate-0"
+                        }`}
+                      >
+                        <path
+                          d="M6 9l6 6 6-6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span className="sr-only">, additional components</span>
+                    </button>
+
+                    {list2Open &&
+                      ReactDOM.createPortal(
+                        <div
+                          aria-hidden="false"
+                          style={{ position: "fixed", inset: 0, zIndex: 1000 }}
+                          onMouseDown={(e) => {
+                            const inMenu = menu2Ref.current?.contains(e.target);
+                            const inButton = list2BtnRef.current?.contains(e.target);
+                            if (!inMenu && !inButton) setList2Open(false);
+                          }}
+                        >
+                          <div style={{ position: "fixed", inset: 0, background: "transparent" }} />
+                          <div
+                            ref={menu2Ref}
+                            id="list2-menu"
+                            role="menu"
+                            aria-label="List 2 components"
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") {
+                                e.stopPropagation();
+                                setList2Open(false);
+                                requestAnimationFrame(() => list2BtnRef.current?.focus());
+                              } else {
+                                onMenuKeyDown(e, "list2");
+                              }
+                            }}
+                            tabIndex={-1}
+                            className="rounded-xl border border-white/20 shadow-lg focus:outline-none"
+                            style={{
+                              position: "fixed",
+                              top: `${menu2Pos.top}px`,
+                              left: `${menu2Pos.left}px`,
+                              width: `${menu2Pos.width}px`,
+                              maxWidth: "90vw",
+                              background:
+                                "linear-gradient(45deg, rgba(175,36,151,0.92) 10%, rgba(144,45,154,0.90) 20%, rgba(24,64,160,0.90) 100%)",
+                              backdropFilter: "saturate(130%) blur(6px)",
+                              zIndex: 1001,
+                            }}
+                            onFocusOut={(e) => {
+                              const related = e.relatedTarget;
+                              const inTrigger = list2BtnRef.current?.contains(related);
+                              const inMenu = menu2Ref.current?.contains(related);
+                              if (!inTrigger && !inMenu) setList2Open(false);
+                            }}
+                            onMouseLeave={() => setList2Open(false)}
+                          >
+                            <ul className="py-2 px-1 sm:px-2">
+                              {list2Items.map((it) => {
+                                const isActive = active === it.key;
+                                return (
+                                  <li key={`list2-${it.key}`}>
+                                    <button
+                                      role="menuitem"
+                                      onClick={() => selectAndClose(it.key)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          selectAndClose(it.key);
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        const related = e.relatedTarget;
+                                        const inMenu = menu2Ref.current?.contains(related);
+                                        const inTrigger = list2BtnRef.current?.contains(related);
+                                        if (!inMenu && !inTrigger) setList2Open(false);
+                                      }}
+                                      className={`w-full text-left px-3 py-2 text-sm rounded-lg mx-2 my-1 transition-transform focus-ring ${
+                                        isActive ? "bg-white text-[var(--color-text)] shadow" : "text-white/95 hover:bg-white/10"
+                                      }`}
+                                      style={{
+                                        transition: "transform 150ms ease, box-shadow 150ms ease, background 150ms ease",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = "scale(1.02)";
+                                        e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.18)";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = "scale(1)";
+                                        e.currentTarget.style.boxShadow = "none";
+                                      }}
+                                    >
+                                      <span style={{ textTransform: "uppercase" }}>{it.label}</span>
                                     </button>
                                   </li>
                                 );
