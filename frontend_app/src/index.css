@@ -24,6 +24,9 @@
 
   --tile-hero-gradient: linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%);
   --tile-ld-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+
+  /* Centralized header gradient token */
+  --header-gradient: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%);
 }
 
 html, body, #root {
@@ -53,13 +56,44 @@ body {
 
 /* Optional: utility classes for custom gradients if needed elsewhere */
 .header-gradient {
-  background: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%);
+  background: var(--header-gradient);
 }
 .page-gradient {
   background: linear-gradient(87deg, #95bff0 20%, #ac7de9 80%);
 }
 .footer-gradient {
-  background: linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%);
+  background: var(--header-gradient);
+}
+
+/* Gradient text helper (for checkmarks/icons) */
+.text-header-gradient {
+  background-image: var(--header-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent; /* fallback ensures no visible color if clipping not supported */
+}
+
+/* Gradient border/focus accent for inputs and buttons */
+.gradient-accent {
+  position: relative;
+  background: #fff;
+}
+.gradient-accent::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--header-gradient);
+  z-index: 0;
+}
+.gradient-accent > * {
+  position: relative;
+  z-index: 1;
+}
+.gradient-accent-inner {
+  background: #fff;
+  border-radius: inherit;
 }
 
 /* subtle top border utility (can be reused) */

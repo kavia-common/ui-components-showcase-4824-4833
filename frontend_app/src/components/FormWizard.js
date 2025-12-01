@@ -350,11 +350,15 @@ export default function FormWizard() {
               <div className="flex items-center gap-2">
                 <span
                   className={`h-6 w-6 rounded-full grid place-items-center text-xs font-bold ${
-                    isComplete ? "bg-green-500 text-white" : isActive ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                    isComplete
+                      ? "bg-white"
+                      : isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-700"
                   }`}
                   aria-hidden="true"
                 >
-                  {isComplete ? "✓" : s.key}
+                  {isComplete ? <span className="text-header-gradient">✓</span> : s.key}
                 </span>
                 <span className="text-sm font-semibold" style={{ textTransform: "uppercase" }}>
                   {s.label}
@@ -496,16 +500,18 @@ export default function FormWizard() {
               <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-username">
                 Username
               </label>
-              <input
-                id="fw-username"
-                ref={setInputRef("username")}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                value={data.username}
-                onFocus={onFocus("username")}
-                onChange={onChange("username")}
-                onBlur={onBlurField(1)}
-                autoComplete="username"
-              />
+              <div className="mt-1 rounded-lg gradient-accent">
+                <input
+                  id="fw-username"
+                  ref={setInputRef("username")}
+                  className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.username}
+                  onFocus={onFocus("username")}
+                  onChange={onChange("username")}
+                  onBlur={onBlurField(1)}
+                  autoComplete="username"
+                />
+              </div>
               {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
             </div>
 
@@ -513,17 +519,19 @@ export default function FormWizard() {
               <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-password">
                 Password
               </label>
-              <input
-                id="fw-password"
-                ref={setInputRef("password")}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                value={data.password}
-                onFocus={onFocus("password")}
-                onChange={onChange("password")}
-                onBlur={onBlurField(1)}
-                type="password"
-                autoComplete="new-password"
-              />
+              <div className="mt-1 rounded-lg gradient-accent">
+                <input
+                  id="fw-password"
+                  ref={setInputRef("password")}
+                  className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.password}
+                  onFocus={onFocus("password")}
+                  onChange={onChange("password")}
+                  onBlur={onBlurField(1)}
+                  type="password"
+                  autoComplete="new-password"
+                />
+              </div>
               {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
             </div>
 
@@ -531,17 +539,19 @@ export default function FormWizard() {
               <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-confirm">
                 Confirm Password
               </label>
-              <input
-                id="fw-confirm"
-                ref={setInputRef("confirm")}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                value={data.confirm}
-                onFocus={onFocus("confirm")}
-                onChange={onChange("confirm")}
-                onBlur={onBlurField(1)}
-                type="password"
-                autoComplete="new-password"
-              />
+              <div className="mt-1 rounded-lg gradient-accent">
+                <input
+                  id="fw-confirm"
+                  ref={setInputRef("confirm")}
+                  className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.confirm}
+                  onFocus={onFocus("confirm")}
+                  onChange={onChange("confirm")}
+                  onBlur={onBlurField(1)}
+                  type="password"
+                  autoComplete="new-password"
+                />
+              </div>
               {errors.confirm && <p className="text-xs text-red-600 mt-1">{errors.confirm}</p>}
             </div>
           </section>
@@ -559,32 +569,36 @@ export default function FormWizard() {
                 <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-first">
                   First Name
                 </label>
-                <input
-                  id="fw-first"
-                  ref={setInputRef("firstName")}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                  value={data.firstName}
-                  onFocus={onFocus("firstName")}
-                  onChange={onChange("firstName")}
-                  onBlur={onBlurField(2)}
-                  autoComplete="given-name"
-                />
+                <div className="mt-1 rounded-lg gradient-accent">
+                  <input
+                    id="fw-first"
+                    ref={setInputRef("firstName")}
+                    className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                    value={data.firstName}
+                    onFocus={onFocus("firstName")}
+                    onChange={onChange("firstName")}
+                    onBlur={onBlurField(2)}
+                    autoComplete="given-name"
+                  />
+                </div>
                 {errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
               </div>
               <div>
                 <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-last">
                   Last Name
                 </label>
-                <input
-                  id="fw-last"
-                  ref={setInputRef("lastName")}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                  value={data.lastName}
-                  onFocus={onFocus("lastName")}
-                  onChange={onChange("lastName")}
-                  onBlur={onBlurField(2)}
-                  autoComplete="family-name"
-                />
+                <div className="mt-1 rounded-lg gradient-accent">
+                  <input
+                    id="fw-last"
+                    ref={setInputRef("lastName")}
+                    className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                    value={data.lastName}
+                    onFocus={onFocus("lastName")}
+                    onChange={onChange("lastName")}
+                    onBlur={onBlurField(2)}
+                    autoComplete="family-name"
+                  />
+                </div>
                 {errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
               </div>
             </div>
@@ -593,17 +607,19 @@ export default function FormWizard() {
               <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-email">
                 Email
               </label>
-              <input
-                id="fw-email"
-                ref={setInputRef("email")}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                value={data.email}
-                onFocus={onFocus("email")}
-                onChange={onChange("email")}
-                onBlur={onBlurField(2)}
-                type="email"
-                autoComplete="email"
-              />
+              <div className="mt-1 rounded-lg gradient-accent">
+                <input
+                  id="fw-email"
+                  ref={setInputRef("email")}
+                  className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.email}
+                  onFocus={onFocus("email")}
+                  onChange={onChange("email")}
+                  onBlur={onBlurField(2)}
+                  type="email"
+                  autoComplete="email"
+                />
+              </div>
               {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
             </div>
           </section>
@@ -620,21 +636,23 @@ export default function FormWizard() {
               <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-topic">
                 Topic
               </label>
-              <select
-                id="fw-topic"
-                ref={setInputRef("topic")}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring bg-white"
-                value={data.topic}
-                onFocus={onFocus("topic")}
-                onChange={onChange("topic")}
-                onBlur={onBlurField(3)}
-              >
-                <option value="">Select a topic</option>
-                <option value="design">Design</option>
-                <option value="engineering">Engineering</option>
-                <option value="product">Product</option>
-                <option value="marketing">Marketing</option>
-              </select>
+              <div className="mt-1 rounded-lg gradient-accent">
+                <select
+                  id="fw-topic"
+                  ref={setInputRef("topic")}
+                  className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring bg-white"
+                  value={data.topic}
+                  onFocus={onFocus("topic")}
+                  onChange={onChange("topic")}
+                  onBlur={onBlurField(3)}
+                >
+                  <option value="">Select a topic</option>
+                  <option value="design">Design</option>
+                  <option value="engineering">Engineering</option>
+                  <option value="product">Product</option>
+                  <option value="marketing">Marketing</option>
+                </select>
+              </div>
               {errors.topic && <p className="text-xs text-red-600 mt-1">{errors.topic}</p>}
             </div>
 
@@ -678,16 +696,18 @@ export default function FormWizard() {
               <label className="text-sm font-medium" style={{ textTransform: "uppercase" }} htmlFor="fw-interest">
                 Interest (optional)
               </label>
-              <input
-                id="fw-interest"
-                ref={setInputRef("interest")}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
-                value={data.interest}
-                onFocus={onFocus("interest")}
-                onChange={onChange("interest")}
-                onBlur={onBlurField(3)}
-                placeholder="Tell us more about your interests"
-              />
+              <div className="mt-1 rounded-lg gradient-accent">
+                <input
+                  id="fw-interest"
+                  ref={setInputRef("interest")}
+                  className="gradient-accent-inner w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
+                  value={data.interest}
+                  onFocus={onFocus("interest")}
+                  onChange={onChange("interest")}
+                  onBlur={onBlurField(3)}
+                  placeholder="Tell us more about your interests"
+                />
+              </div>
             </div>
           </section>
         </section>
@@ -799,13 +819,16 @@ export default function FormWizard() {
 
       {/* Footer below panels */}
       <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
-          onClick={prev}
-          disabled={step === 1}
-        >
-          <span style={{ textTransform: "uppercase" }}>Back</span>
-        </button>
+        <div className="min-h-[40px]">
+          {step > 1 && (
+            <button
+              className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50 focus-ring"
+              onClick={prev}
+            >
+              <span style={{ textTransform: "uppercase" }}>Back</span>
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {editingSection ? (
@@ -826,21 +849,23 @@ export default function FormWizard() {
             </>
           ) : step < 4 ? (
             <button
-              className="rounded-lg bg-primary text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={next}
               disabled={!canProceed()}
+              style={{ background: headerGradient }}
             >
               <span style={{ textTransform: "uppercase" }}>Next</span>
             </button>
           ) : (
             <button
-              className="rounded-lg bg-green-600 text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
                 if (validateStep(4, true)) {
                   alert("Submitted! Thank you.");
                 }
               }}
               disabled={!data.consent}
+              style={{ background: headerGradient }}
             >
               <span style={{ textTransform: "uppercase" }}>Submit</span>
             </button>
