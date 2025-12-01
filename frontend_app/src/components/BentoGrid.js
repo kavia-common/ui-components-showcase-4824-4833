@@ -274,26 +274,23 @@ export default function BentoGrid() {
             }
             className="mb-2"
           />
-          {/* Body updated: remove one sub-card on the right and rebalance layout */}
+          {/* Body updated: remove one more sub-card on the right and reduce height while keeping header unchanged */}
           <div className="grid grid-cols-12 gap-2">
             {/* Left: main banner keeps proportion on all breakpoints */}
             <div
-              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/9] sm:aspect-[16/8] md:aspect-[16/8]"
+              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden bg-gray-100 aspect-[16/9] sm:aspect-[16/7] md:aspect-[16/7]"
               aria-hidden="true"
             />
-            {/* Right: only two stacked thumbnails, responsive with no gaps */}
-            <div className="col-span-12 sm:col-span-4 grid grid-rows-2 gap-1.5">
+            {/* Right: only ONE thumbnail now; responsive with no gaps */}
+            <div className="col-span-12 sm:col-span-4 grid grid-rows-1">
               <div
-                className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/10]"
-                aria-hidden="true"
-              />
-              <div
-                className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/10]"
+                className="rounded-lg overflow-hidden bg-gray-100 aspect-[16/9] sm:aspect-[16/12]"
                 aria-hidden="true"
               />
             </div>
           </div>
-          <p className="mt-1 text-[13px] md:text-sm text-slate-600 line-clamp-1">
+          {/* Reduce caption spacing to tighten overall tile height */}
+          <p className="mt-0.5 text-[13px] md:text-sm text-slate-600 line-clamp-1">
             Highlights from across the organization this week.
           </p>
         </section>
