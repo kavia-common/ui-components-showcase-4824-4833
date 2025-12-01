@@ -347,7 +347,9 @@ export default function BentoGrid() {
     if (t.key === "csr") {
       return (
         <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-4 ${t.minH}`}>
+          {/* Keep unified header gradient unchanged */}
           <Header id={`tile-${t.key}-title`} title={t.title} className="mb-3" hideAction />
+          {/* Apply the same lighter hover gradient variant to interactive sub-card wrappers only */}
           <div className="grid grid-cols-2 gap-3 items-center justify-items-center">
             {Array.from({ length: 4 }).map((_, i) => (
               <InteractiveHover
@@ -355,8 +357,12 @@ export default function BentoGrid() {
                 as="a"
                 href="#"
                 ariaLabel={`Open CSR item ${i + 1}`}
+                // Maintain existing borders, spacing, sizing; add smooth transition on background only
                 className="h-10 w-20 rounded-md transition-colors duration-200 ease-out border border-gray-200"
+                title={`Open CSR item ${i + 1}`}
+                role="button"
               >
+                {/* Keep inner placeholder with neutral bg; no layout shift */}
                 <div className="w-full h-full bg-gray-100 rounded-md" aria-hidden="true" />
               </InteractiveHover>
             ))}
