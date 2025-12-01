@@ -24,6 +24,10 @@ function App() {
    * "More" menu renders as a body-level overlay via portal to avoid clipping by the navbar.
    */
   const [active, setActive] = useState("hero");
+  // Floating chatbot visibility state lifted to App so a page/section can open it
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const openChat = useCallback(() => setChatbotOpen(true), []);
+  const closeChat = useCallback(() => setChatbotOpen(false), []);
 
   // Track "More" dropdown open state and anchor/refs for a11y keyboard navigation
   const [moreOpen, setMoreOpen] = useState(false);
@@ -85,6 +89,8 @@ function App() {
       { key: "wizard", label: "Form Wizard" },
       { key: "testimonial", label: "Testimonial" },
       { key: "toast", label: "Toast" },
+      // Keep Chatbot listed as a component entry (page/section), not an inline widget
+      { key: "chatbot", label: "Chatbot" },
     ],
     []
   );
@@ -457,6 +463,30 @@ function App() {
           {active === "testimonial" && <Testimonial />}
           {active === "toast" && <ToastDemo />}
 
+          {active === "chatbot" && (
+            <section aria-label="Chatbot" className="surface p-5">
+              <header className="mb-2">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  <span style={{ textTransform: "uppercase" }}>Chatbot</span>
+                </h2>
+                <p className="text-sm text-slate-600">
+                  This is the Chatbot component page. Use the floating circular launcher at the bottom-right to open the chat. You can also open it from here.
+                </p>
+              </header>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring"
+                  style={{ background: "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)" }}
+                  onClick={openChat}
+                  aria-label="Open Chatbot"
+                >
+                  <span style={{ textTransform: "uppercase" }}>Open Chatbot</span>
+                </button>
+              </div>
+            </section>
+          )}
+
           {/* Footer with gradient and polished layout */}
           <footer
             className="mt-6 rounded-2xl shadow-soft text-white"
@@ -527,7 +557,7 @@ function App() {
           </footer>
         </main>
         {/* Floating chatbot launcher and panel (global overlay) */}
-        <ChatbotFloating />
+        <ChatbotFloating open={chatbotOpen} onRequestClose={closeChat} onRequestOpen={openChat} />
       </div>
     </ToastProvider>
   );

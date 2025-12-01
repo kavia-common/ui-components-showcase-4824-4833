@@ -177,23 +177,32 @@ export default function ChatbotStub() {
       </div>
 
       {/* Input */}
-      <form onSubmit={send} className="mt-3 flex gap-2">
+      <div className="mt-3 flex gap-2">
         <input
           className="flex-1 rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           placeholder="Type your message or click a suggestion..."
           aria-label="Chat message"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              // Submit via Enter
+              // Fabricate a minimal event-like object for send to prevent default
+              send({ preventDefault: () => {} });
+            }
+          }}
         />
         <button
           className="rounded-lg text-white px-4 py-2 hover:opacity-95 focus-ring"
-          type="submit"
+          type="button"
+          onClick={(e) => send({ preventDefault: () => {} })}
           style={{ background: headerGradient }}
           aria-label="Send message"
         >
           <span style={{ textTransform: "uppercase" }}>Send</span>
         </button>
-      </form>
+      </div>
     </div>
   );
 }

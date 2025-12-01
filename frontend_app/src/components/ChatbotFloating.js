@@ -11,8 +11,21 @@ import ChatbotStub from "./ChatbotStub";
  * - Accessibility: aria roles/labels, focus restoration to launcher on close
  * - Theming: matches app gradient/header styling and Tailwind tokens
  */
-export default function ChatbotFloating() {
-  const [open, setOpen] = useState(false);
+export default function ChatbotFloating({ open: controlledOpen, onRequestOpen, onRequestClose } = {}) {
+  // Support both controlled and uncontrolled usage
+  const isControlled = typeof controlledOpen === "boolean";
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  const setOpen = (next) => {
+    if (isControlled) {
+      if (next && onRequestOpen) onRequestOpen();
+      if (!next && onRequestClose) onRequestClose();
+    } else {
+      setUncontrolledOpen(next);
+    }
+  };
+
   const launcherRef = useRef(null);
   const panelRef = useRef(null);
   const firstFocusableRef = useRef(null);
@@ -21,15 +34,12 @@ export default function ChatbotFloating() {
   // PUBLIC_INTERFACE
   // Toggle chatbot open/close; when closing, restore focus to launcher
   const toggle = useCallback(() => {
-    setOpen((v) => {
-      const next = !v;
-      if (!next) {
-        // restore focus after close on next frame
-        requestAnimationFrame(() => launcherRef.current?.focus());
-      }
-      return next;
-    });
-  }, []);
+    const next = !open;
+    setOpen(next);
+    if (!next) {
+      requestAnimationFrame(() => launcherRef.current?.focus());
+    }
+  }, [open]);
 
   // Close on ESC, outside click
   useEffect(() => {
@@ -103,7 +113,6 @@ export default function ChatbotFloating() {
       if (heading && heading.focus) {
         heading.focus();
       } else {
-        // fallback to first focusable control inside panel
         const first = panelRef.current?.querySelector(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
