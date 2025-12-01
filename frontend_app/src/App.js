@@ -13,6 +13,14 @@ import Testimonial from "./components/Testimonial";
 import ToastDemo from "./components/ToastDemo";
 import { ToastProvider } from "./components/ToastProvider";
 import ChatbotFloating from "./components/ChatbotFloating";
+import Pricing from "./components/Pricing";
+import NewsletterSection from "./components/NewsletterSection";
+import ContactSection from "./components/ContactSection";
+import TeamSection from "./components/TeamSection";
+import LogoClouds from "./components/LogoClouds";
+import Calendar from "./components/Calendar";
+import DataTable from "./components/DataTable";
+import Footer from "./components/Footer";
 
 // PUBLIC_INTERFACE
 function App() {
@@ -89,6 +97,13 @@ function App() {
       { key: "wizard", label: "Form Wizard" },
       { key: "testimonial", label: "Testimonial" },
       { key: "toast", label: "Toast" },
+      { key: "pricing", label: "Pricing" },
+      { key: "newsletter", label: "Newsletter" },
+      { key: "contact", label: "Contact" },
+      { key: "team", label: "Team" },
+      { key: "logos", label: "Logo Clouds" },
+      { key: "calendar", label: "Calendar" },
+      { key: "datatable", label: "Data Table" },
       // Keep Chatbot listed as a component entry (page/section), not an inline widget
       { key: "chatbot", label: "Chatbot" },
     ],
@@ -462,6 +477,13 @@ function App() {
           {active === "wizard" && <FormWizard />}
           {active === "testimonial" && <Testimonial />}
           {active === "toast" && <ToastDemo />}
+          {active === "pricing" && <Pricing />}
+          {active === "newsletter" && <NewsletterSection />}
+          {active === "contact" && <ContactSection />}
+          {active === "team" && <TeamSection />}
+          {active === "logos" && <LogoClouds />}
+          {active === "calendar" && <Calendar />}
+          {active === "datatable" && <DataTable />}
 
           {active === "chatbot" && (
             <section aria-label="Chatbot" className="surface p-5">
@@ -487,74 +509,22 @@ function App() {
             </section>
           )}
 
-          {/* Footer with gradient and polished layout */}
-          <footer
-            className="mt-6 rounded-2xl shadow-soft text-white"
-            style={{
-              background:
-                "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
-            }}
-          >
-            {/* subtle top separation using semi-transparent border and shadow inset */}
-            <div className="rounded-2xl border-t border-white/10">
-              <div className="mx-auto max-w-[88rem] px-4 py-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  {/* Left: App name + short tagline */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold"
-                        aria-hidden="true"
-                      >
-                        UI
-                      </div>
-                      <div className="text-white">
-                        <p className="text-base font-semibold leading-tight">
-                          Components Showcase
-                        </p>
-                        <p className="text-xs text-white/85 leading-snug">
-                          Ocean Professional UI demos in React + Tailwind
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: compact links to component demos (same as navbar) */}
-                  <nav aria-label="Component quick links" className="sm:text-right">
-                    <ul className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
-                      {[...primaryItems, ...moreItems].map((it) => {
-                        const isActive = active === it.key;
-                        return (
-                          <li key={`footer-${it.key}`}>
-                            <button
-                              onClick={() => setActive(it.key)}
-                              className={`px-3 py-1.5 rounded-full text-xs transition-colors backdrop-blur focus-ring
-                                ${
-                                  isActive
-                                    ? "bg-white text-[var(--color-text)] shadow"
-                                    : "text-white/90 hover:bg-white/10"
-                                }`}
-                              aria-current={isActive ? "page" : undefined}
-                            >
-                              <span style={{ textTransform: "uppercase" }}>{it.label}</span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </nav>
-                </div>
-
-                {/* Bottom row: small print and current year */}
-                <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-[11px] text-white/85">
-                    © {new Date().getFullYear()} Components Showcase. Built with React & Tailwind.
-                  </p>
-                  <div className="h-px w-full sm:w-0 bg-white/10 sm:bg-transparent"></div>
-                </div>
-              </div>
-            </div>
-          </footer>
+          {/* Footer with Quick Links and Contact */}
+          <Footer
+            onNavigate={(key) => setActive(key)}
+            links={[
+              { key: "hero", label: "Home" },
+              { key: "accordion", label: "Accordion" },
+              { key: "bento", label: "Bento" },
+              { key: "breadcrumbs", label: "Breadcrumbs" },
+              { key: "pricing", label: "Pricing" },
+              { key: "newsletter", label: "Newsletter" },
+              { key: "contact", label: "Contact" },
+              { key: "team", label: "Team" },
+              { key: "datatable", label: "Data Table" },
+              { key: "calendar", label: "Calendar" },
+            ]}
+          />
         </main>
         {/* Floating chatbot launcher and panel (global overlay) */}
         <ChatbotFloating open={chatbotOpen} onRequestClose={closeChat} onRequestOpen={openChat} />
