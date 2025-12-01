@@ -1,19 +1,22 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 /**
  * PUBLIC_INTERFACE
  * Breadcrumbs
- * Ocean Professional-styled breadcrumb navigation. Applies white surface over light canvas,
- * 1px subtle border, soft shadow, rounded-xl radius, and balanced padding (px-4 py-2.5).
- * Links use darker blue text with gradient underline on hover/active and accessible focus ring.
- * Current item is non-link with gradient-filled text and semibold weight. Separators are subtle slate chevrons.
+ * Pixel-accurate breadcrumb navigation matching the latest reference image:
+ * - Container: pill/card with precise radius, border, shadow, and padding
+ * - Separator: chevron with exact size, thickness, color, spacing
+ * - Labels: ALL CAPS; links vs current item typography (size/weight/letter-spacing)
+ * - Links: darker color, thicker gradient underline on hover/focus; accessible focus-visible ring
+ * - Current item: gradient-filled text (45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)
+ * - Preserve routing semantics and aria-current on last item
  */
 export default function Breadcrumbs() {
-  // Example path; in a real app this would be derived from the router.
+  // Example path; replace with router-derived values in real app.
   const crumbs = ["Home", "Components", "Forms", "Wizard"];
   const last = crumbs.length - 1;
 
-  // Chevron separator: inherits color from parent
+  // Chevron separator tuned to screenshot (16px viewport, 2px stroke)
   const Chevron = ({ ariaHidden = true }) => (
     <svg
       width="16"
@@ -35,51 +38,78 @@ export default function Breadcrumbs() {
   );
 
   // PUBLIC_INTERFACE
-  // Renders a single crumb with keyboard-accessible focus ring for links.
+  // A gradient underline controller that toggles with data-underline state on the parent link.
+  function GradientUnderline({ parentRef }) {
+    const spanRef = useRef(null);
+    useEffect(() => {
+      const parent = parentRef?.current;
+      const node = spanRef.current;
+      if (!parent || !node) return;
+      const update = () => {
+        node.style.opacity = parent.dataset.underline === "on" ? "1" : "0";
+      };
+      update();
+      const mo = new MutationObserver(update);
+      mo.observe(parent, { attributes: true, attributeFilter: ["data-underline"] });
+      return () => mo.disconnect();
+    }, [parentRef]);
+    return (
+      <span
+        ref={spanRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 right-0"
+        style={{
+          bottom: 0,
+          height: 3, // thicker underline for stronger visual weight
+          transform: "translateY(4px)", // emulate larger underline-offset while avoiding layout shift
+          backgroundImage:
+            "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "100% 100%",
+          opacity: 0,
+          transition: "opacity 140ms ease",
+        }}
+      />
+    );
+  }
+
+  // PUBLIC_INTERFACE
+  // Renders a single crumb with accessible focus ring on links and gradient text on current item.
   function Crumb({ label, isLast }) {
-    const baseType = "text-[13px] sm:text-[14px] tracking-[0.01em]";
+    // Typography tokens per screenshot
+    const baseType =
+      "text-[13px] sm:text-[14px] leading-[1.35] tracking-[0.02em]"; // tighter leading, slight letter-spacing
 
-    // Gradient to use for underline and active text
-    const gradient = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
+    // Link ref to control the gradient underline element
+    const linkRef = useRef(null);
 
-    // Link styling:
-    // - Keep darker text color (#1E40AF)
-    // - Provide gradient underline with slightly thicker decoration
-    // - Maintain underline-offset for readability
-    // - Use pseudo-element fallback to avoid layout shift on browsers lacking text-decoration support nuances
     const linkClasses = [
       baseType,
-      "font-medium",
-      "relative", // enable pseudo-element underline
-      "px-0.5 py-0.5 rounded-md",
-      "text-[#1E40AF]",
-      "underline-offset-2", // keep readable offset
-      // Focus-visible ring aligned to primary for accessibility
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-white",
+      "font-semibold", // slightly bolder for links in screenshot
+      "relative",
+      "px-0.5 py-[3px] rounded-[8px]", // pill-y focus target inside row
+      "text-[#1E3A8A]", // darker blue (a bit darker than #1E40AF visually)
+      // Accessible focus-visible ring with white offset on card surface
+      "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-white",
       "transition-colors",
-      // Prevent layout shift by not toggling border/padding on hover
     ].join(" ");
 
-    // Inline style attempts to use modern text-decoration properties where supported.
     const linkStyle = {
-      // Try using decoration thickness and color; actual gradient underline is handled by ::after
-      textDecorationColor: "transparent",
-      textDecorationThickness: "2px", // slightly thicker than default
-      // Keep no underline by default; we simulate on hover/focus/active with ::after
       textDecorationLine: "none",
+      textDecorationThickness: "3px",
+      textDecorationColor: "transparent",
     };
 
-    // Current item: non-link with gradient text fill; provide solid color fallback for older browsers.
-    // Preserve font weight and spacing, do not alter layout/padding/separators/focus ring.
     const currentClasses = [
       "inline-flex items-center",
-      "font-semibold",
+      "font-extrabold", // current item appears the strongest
       baseType,
     ].join(" ");
 
     const currentStyle = {
-      color: "#1840a0", // fallback solid color for contrast
-      backgroundImage: gradient,
+      color: "#1840a0", // fallback
+      backgroundImage:
+        "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)",
       backgroundClip: "text",
       WebkitBackgroundClip: "text",
       WebkitTextFillColor: "transparent",
@@ -91,44 +121,15 @@ export default function Breadcrumbs() {
           href="#"
           className={linkClasses}
           style={linkStyle}
-          // CSS-in-JS handlers to toggle the pseudo-element via dataset attr (no layout shift)
+          ref={linkRef}
+          data-underline="off"
           onMouseEnter={(e) => (e.currentTarget.dataset.underline = "on")}
           onMouseLeave={(e) => (e.currentTarget.dataset.underline = "off")}
           onFocus={(e) => (e.currentTarget.dataset.underline = "on")}
           onBlur={(e) => (e.currentTarget.dataset.underline = "off")}
-          data-underline="off"
         >
           <span style={{ textTransform: "uppercase" }}>{label}</span>
-          {/* Gradient underline pseudo-element via inline style object on a span wrapper */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute left-0 right-0"
-            style={{
-              bottom: 0,
-              height: 2, // slightly thicker underline
-              transform: "translateY(3px)", // emulate underline-offset-2 while avoiding layout shift
-              backgroundImage: gradient,
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "100% 100%",
-              opacity: 0,
-              transition: "opacity 120ms ease",
-            }}
-            // React can't style :hover/:focus of parent directly; use MutationObserver-like via data attribute:
-            ref={(node) => {
-              if (!node) return;
-              const parent = node.parentElement;
-              // observer to toggle opacity based on dataset
-              const update = () => {
-                node.style.opacity = parent?.dataset.underline === "on" ? "1" : "0";
-              };
-              update();
-              const mo = new MutationObserver(update);
-              mo.observe(parent, { attributes: true, attributeFilter: ["data-underline"] });
-              // cleanup
-              node.__mo = mo;
-            }}
-            onAnimationEnd={() => {}}
-          />
+          <GradientUnderline parentRef={linkRef} />
         </a>
       );
     }
@@ -142,18 +143,41 @@ export default function Breadcrumbs() {
 
   return (
     <nav aria-label="Breadcrumb">
-      {/* White surface card with subtle border and soft shadow over light canvas */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-soft">
-        <ol className="flex flex-wrap items-center px-4 py-2.5">
+      {/* Card/pill container: match screenshot’s shape, border, shadow, padding */}
+      <div
+        className={[
+          "bg-white",
+          "rounded-full", // pill container per screenshot
+          "border border-gray-200",
+          "shadow-[0_6px_20px_rgba(0,0,0,0.08)]", // soft but present
+          "inline-block", // hug content width
+        ].join(" ")}
+        style={{
+          // Slight internal vertical density; screenshot shows compact pill
+          padding: "10px 14px", // ≈ px-3.5 py-2.5 but exact in px
+        }}
+      >
+        <ol className="flex items-center">
           {crumbs.map((label, i) => {
             const isLast = i === last;
             return (
-              <li key={`${label}-${i}`} className="flex items-center">
+              <li
+                key={`${label}-${i}`}
+                className="flex items-center"
+                style={{
+                  // Tighten horizontal rhythm to match screenshot
+                  // Space is applied via separator wrapper; links have small internal padding already
+                }}
+              >
                 <Crumb label={label} isLast={isLast} />
                 {i < last && (
                   <span
-                    className="mx-2 select-none inline-flex items-center justify-center text-slate-400/70"
+                    className="select-none inline-flex items-center justify-center text-slate-400/80"
                     aria-hidden="true"
+                    style={{
+                      marginLeft: 10,
+                      marginRight: 10, // precise chevron spacing
+                    }}
                   >
                     <Chevron />
                   </span>
