@@ -6,11 +6,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  * Four-step wizard with validation, clickable progress stepper,
  * review with per-section edit/save, and consent-gated submission.
  *
- * Steps:
- * 1) Account: username, password, confirm password
- * 2) Profile: first name, last name, email
- * 3) Preferences: topic (select), delivery frequency (radio), interest (optional text)
- * 4) Review: show collected data; edit a section then Save returns to review; Submit requires consent checkbox.
+ * Stabilization updates:
+ * - Freeze validation, progress, and stepper interactions while the user is typing (isTyping flag via focus/blur and debounced timer).
+ * - Do not perform heavy validations during render; validate only onBlur or after a 250ms debounce when typing stops.
+ * - All inputs are fully controlled with raw state; onChange uses functional updates and does not trim/format values.
+ * - Remove any value text-transform from inputs (labels may keep uppercase).
+ * - Prevent stepper clicks while isTyping is true.
  */
 export default function FormWizard() {
   // Steps metadata
@@ -26,7 +27,7 @@ export default function FormWizard() {
 
   const [step, setStep] = useState(1);
 
-  // Master form data state
+  // Master form data state (controlled raw values)
   const [data, setData] = useState({
     // Step 1 - Account
     username: "",
@@ -46,9 +47,13 @@ export default function FormWizard() {
 
   // Errors keyed by field name
   const [errors, setErrors] = useState({});
-  // Track if user is actively typing to guard against accidental step clicks
-  const typingRef = useRef(false);
-  const typingTimeoutRef = useRef(null);
+
+  // Track active typing state to freeze validation/progress recompute and disable stepper clicks
+  const isTypingRef = useRef(false);
+  const typingStopTimerRef = useRef(null);
+
+  // Track focused field to better manage onBlur validations
+  const focusedFieldRef = useRef(null);
 
   // When editing within Review, track which section is in edit mode (1,2,3) or null
   const [editingSection, setEditingSection] = useState(null);
@@ -57,6 +62,7 @@ export default function FormWizard() {
   const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
   // Validate current step (or a specific step for Review edit flow)
+  // PUBLIC_INTERFACE
   const validateStep = (targetStep = step, persistErrors = true) => {
     const e = {};
     if (targetStep === 1) {
@@ -72,7 +78,6 @@ export default function FormWizard() {
       if (!["daily", "weekly", "monthly"].includes(data.delivery)) {
         e.delivery = "Select a delivery frequency";
       }
-      // interest is optional
     } else if (targetStep === 4) {
       if (!data.consent) e.consent = "You must provide consent before submitting";
     }
@@ -81,11 +86,12 @@ export default function FormWizard() {
   };
 
   /**
-   * Compute per-step "lightweight" validity used to drive visuals (progress bar, stepper chips)
-   * without running full validateStep() on every keystroke.
-   * This avoids over-eager validations during onChange and keeps typing smooth.
+   * Lightweight per-step validity used only for visuals and Next gating.
+   * IMPORTANT: While isTyping is true, freeze derived validity (return previous snapshot)
+   * to prevent progress/stepper thrash during keystrokes.
    */
-  const step1Valid = useMemo(() => {
+  const lastValidityRef = useRef({ s1: false, s2: false, s3: false });
+  const computeS1 = () => {
     const u = data.username;
     const p = data.password;
     const c = data.confirm;
@@ -93,25 +99,42 @@ export default function FormWizard() {
     if (!p || p.length < 8) return false;
     if (c !== p) return false;
     return true;
-  }, [data.username, data.password, data.confirm]);
-
-  const step2Valid = useMemo(() => {
+  };
+  const computeS2 = () => {
     const f = data.firstName;
     const l = data.lastName;
     const e = data.email;
     if (!f || !f.trim()) return false;
     if (!l || !l.trim()) return false;
-    // Only run regex if email has a plausible shape to reduce work during typing
     if (!e) return false;
     return isValidEmail(e);
-  }, [data.firstName, data.lastName, data.email]);
-
-  const step3Valid = useMemo(() => {
+  };
+  const computeS3 = () => {
     const t = data.topic;
     const d = data.delivery;
     if (!t) return false;
     if (!["daily", "weekly", "monthly"].includes(d)) return false;
     return true;
+  };
+
+  // Recompute only when not typing; otherwise, serve last snapshot
+  const step1Valid = useMemo(() => {
+    if (isTypingRef.current) return lastValidityRef.current.s1;
+    const v = computeS1();
+    lastValidityRef.current.s1 = v;
+    return v;
+  }, [data.username, data.password, data.confirm]);
+  const step2Valid = useMemo(() => {
+    if (isTypingRef.current) return lastValidityRef.current.s2;
+    const v = computeS2();
+    lastValidityRef.current.s2 = v;
+    return v;
+  }, [data.firstName, data.lastName, data.email]);
+  const step3Valid = useMemo(() => {
+    if (isTypingRef.current) return lastValidityRef.current.s3;
+    const v = computeS3();
+    lastValidityRef.current.s3 = v;
+    return v;
   }, [data.topic, data.delivery]);
 
   const percentComplete = useMemo(() => {
@@ -119,21 +142,26 @@ export default function FormWizard() {
     return Math.round((completed / 3) * 100);
   }, [step1Valid, step2Valid, step3Valid]);
 
-  // Debounced validation trigger when user pauses typing (>=150ms)
-  const debouncedField = useRef({ field: null });
+  // Debounced validation: run only after 250ms of no typing and when no input is focused.
+  const pendingFieldRef = useRef(null);
   useEffect(() => {
-    if (!debouncedField.current.field) return;
-    const timeout = setTimeout(() => {
-      debouncedField.current.field = null;
-      validateStep(step, true);
-    }, 200);
-    return () => clearTimeout(timeout);
+    if (!pendingFieldRef.current) return;
+    // If still typing, do nothing yet.
+    if (isTypingRef.current) return;
+    const t = setTimeout(() => {
+      if (!isTypingRef.current) {
+        const target = step;
+        validateStep(target, true);
+        pendingFieldRef.current = null;
+      }
+    }, 250);
+    return () => clearTimeout(t);
   }, [data, step]);
 
   // Step navigation: only allow jumping backwards freely; jumping forward requires prior steps valid
   const goToStep = (target) => {
     // If user is actively typing, ignore clicks to avoid focus stealing
-    if (typingRef.current) return;
+    if (isTypingRef.current) return;
     if (target < step) {
       setStep(target);
       setEditingSection(null);
@@ -154,35 +182,55 @@ export default function FormWizard() {
   };
 
   const next = () => {
+    if (isTypingRef.current) return; // Do not proceed while typing
     if (validateStep(step, true)) setStep((s) => Math.min(4, s + 1));
   };
-  const prev = () => setStep((s) => Math.max(1, s - 1));
+  const prev = () => {
+    if (isTypingRef.current) return;
+    setStep((s) => Math.max(1, s - 1));
+  };
 
-  // Helpers for field changes
+  // Helpers for field changes (functional updates, raw values)
+  const markTyping = () => {
+    isTypingRef.current = true;
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+    }, 250);
+  };
+
   const onChange = (field) => (e) => {
     const value =
       e?.target?.type === "checkbox" ? e.target.checked : e?.target?.value ?? e;
-
-    // Mark as typing to prevent step navigation while user is inputting
-    typingRef.current = true;
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      typingRef.current = false;
-    }, 250);
-
+    markTyping();
     setData((d) => ({ ...d, [field]: value }));
+    // schedule validation after typing settles
+    pendingFieldRef.current = field;
+  };
 
-    // Mark field for debounced validation
-    debouncedField.current.field = field;
+  const onFocus = (field) => () => {
+    focusedFieldRef.current = field;
+    isTypingRef.current = true; // freeze visuals immediately on focus
+  };
+
+  const onBlurField = (stepForField) => () => {
+    focusedFieldRef.current = null;
+    // mark typing stop now
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    isTypingRef.current = false;
+    // validate on blur
+    validateStep(stepForField, true);
   };
 
   // Review edit actions
   const startEdit = (section) => {
+    if (isTypingRef.current) return;
     setEditingSection(section);
     setErrors({});
     setStep(section); // navigate to section step for editing
   };
   const saveFromEdit = () => {
+    if (isTypingRef.current) return;
     // Validate the section
     const ok = validateStep(step, true);
     if (!ok) return;
@@ -211,13 +259,14 @@ export default function FormWizard() {
               key={s.key}
               type="button"
               onMouseDown={(e) => {
-                if (typingRef.current) e.preventDefault();
+                if (isTypingRef.current) e.preventDefault();
               }}
               onClick={() => goToStep(s.key)}
               className={`flex-1 min-w-0 rounded-lg px-3 py-2 text-left transition-colors border
                 ${isActive ? "bg-white border-blue-500 shadow" : "bg-white/70 border-gray-200 hover:bg-white"}
               focus-ring`}
               aria-current={isActive ? "step" : undefined}
+              aria-disabled={isTypingRef.current ? "true" : "false"}
             >
               <div className="flex items-center gap-2">
                 <span
@@ -256,7 +305,7 @@ export default function FormWizard() {
     </div>
   );
 
-  // Step sections
+  // Step sections (inputs: controlled raw, no value transforms; validation only onBlur/debounced)
   const Step1 = () => (
     <section aria-label="Account details" className="space-y-3">
       <div>
@@ -267,8 +316,9 @@ export default function FormWizard() {
           id="fw-username"
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.username}
+          onFocus={onFocus("username")}
           onChange={onChange("username")}
-          onBlur={() => validateStep(1, true)}
+          onBlur={onBlurField(1)}
           autoComplete="username"
         />
         {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
@@ -282,8 +332,9 @@ export default function FormWizard() {
           id="fw-password"
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.password}
+          onFocus={onFocus("password")}
           onChange={onChange("password")}
-          onBlur={() => validateStep(1, true)}
+          onBlur={onBlurField(1)}
           type="password"
           autoComplete="new-password"
         />
@@ -298,8 +349,9 @@ export default function FormWizard() {
           id="fw-confirm"
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.confirm}
+          onFocus={onFocus("confirm")}
           onChange={onChange("confirm")}
-          onBlur={() => validateStep(1, true)}
+          onBlur={onBlurField(1)}
           type="password"
           autoComplete="new-password"
         />
@@ -319,8 +371,9 @@ export default function FormWizard() {
             id="fw-first"
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
             value={data.firstName}
+            onFocus={onFocus("firstName")}
             onChange={onChange("firstName")}
-            onBlur={() => validateStep(2, true)}
+            onBlur={onBlurField(2)}
             autoComplete="given-name"
           />
           {errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
@@ -333,8 +386,9 @@ export default function FormWizard() {
             id="fw-last"
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
             value={data.lastName}
+            onFocus={onFocus("lastName")}
             onChange={onChange("lastName")}
-            onBlur={() => validateStep(2, true)}
+            onBlur={onBlurField(2)}
             autoComplete="family-name"
           />
           {errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
@@ -349,8 +403,9 @@ export default function FormWizard() {
           id="fw-email"
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.email}
+          onFocus={onFocus("email")}
           onChange={onChange("email")}
-          onBlur={() => validateStep(2, true)}
+          onBlur={onBlurField(2)}
           type="email"
           autoComplete="email"
         />
@@ -369,8 +424,9 @@ export default function FormWizard() {
           id="fw-topic"
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring bg-white"
           value={data.topic}
+          onFocus={onFocus("topic")}
           onChange={onChange("topic")}
-          onBlur={() => validateStep(3, true)}
+          onBlur={onBlurField(3)}
         >
           <option value="">Select a topic</option>
           <option value="design">Design</option>
@@ -402,8 +458,9 @@ export default function FormWizard() {
                 name="delivery"
                 value={opt.value}
                 checked={data.delivery === opt.value}
+                onFocus={onFocus("delivery")}
                 onChange={onChange("delivery")}
-                onBlur={() => validateStep(3, true)}
+                onBlur={onBlurField(3)}
                 className="accent-blue-600"
               />
               <span className="text-sm font-medium" style={{ textTransform: "uppercase" }}>
@@ -423,8 +480,9 @@ export default function FormWizard() {
           id="fw-interest"
           className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 focus-ring"
           value={data.interest}
+          onFocus={onFocus("interest")}
           onChange={onChange("interest")}
-          onBlur={() => validateStep(3, true)}
+          onBlur={onBlurField(3)}
           placeholder="Tell us more about your interests"
         />
       </div>
@@ -519,7 +577,9 @@ export default function FormWizard() {
           <input
             type="checkbox"
             checked={data.consent}
+            onFocus={onFocus("consent")}
             onChange={onChange("consent")}
+            onBlur={onBlurField(4)}
             aria-describedby="fw-consent-help"
           />
           <span style={{ textTransform: "uppercase" }}>I consent to submit this information</span>
@@ -591,8 +651,9 @@ export default function FormWizard() {
   );
 
   // Only enable Next if current step valid
+  // PUBLIC_INTERFACE
   function canProceed() {
-    // Use memoized lightweight validity to avoid heavy checks per render
+    // While typing, use the last stable snapshot to avoid thrash.
     if (step === 1) return step1Valid;
     if (step === 2) return step2Valid;
     if (step === 3) return step3Valid;
