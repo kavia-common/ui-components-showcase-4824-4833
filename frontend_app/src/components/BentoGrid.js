@@ -140,72 +140,75 @@ export default function BentoGrid() {
   // Render a tile by variant (only headers updated; bodies unchanged)
   const Tile = ({ t }) => {
     if (t.variant === "gradient-hero") {
+      // Keep header gradient; switch body to neutral surface (no blue background).
       return (
         <section
           role="region"
           aria-labelledby={`tile-${t.key}-title`}
-          className={`${t.spans} text-white ${cardBase} p-6 relative overflow-hidden`}
-          style={{
-            background:
-              "var(--tile-hero-gradient, linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #9333EA 100%))",
-          }}
+          className={`${t.spans} ${cardPlain} p-0 relative overflow-hidden`}
         >
           <HeaderBar
             id={`tile-${t.key}-title`}
             title={t.title}
             right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
-            className="mb-3"
-            showChip
+            className="" // header has its own spacing
           />
 
-          <div className="mt-3 text-sm text-white/90 max-w-[48ch]">
-            Rewards, Recognition, Be Squad, Engagement Platform, Employee Wellness, You Matter
+          {/* Neutral body surface under the gradient header */}
+          <div className="px-6 pt-3 pb-6">
+            <div className="mt-1 text-sm text-slate-700 max-w-[48ch]">
+              Rewards, Recognition, Be Squad, Engagement Platform, Employee Wellness, You Matter
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {["Rewards", "Recognition", "Be Squad", "Engagement", "Wellness", "You Matter"].map((c) => (
+                <span
+                  key={c}
+                  className="rounded-full bg-slate-100 px-3 py-1 text-[12px] font-medium text-slate-700"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {["Rewards", "Recognition", "Be Squad", "Engagement", "Wellness", "You Matter"].map((c) => (
-              <span key={c} className="rounded-full bg-white/15 px-3 py-1 text-[12px] font-medium backdrop-blur-sm">
-                {c}
-              </span>
-            ))}
-          </div>
-
-          {/* Decorative right bubbles aligned with theme */}
+          {/* Decorative right bubbles toned for neutral body; keep subtle and non-blue */}
           <div className="pointer-events-none absolute right-4 top-4 hidden md:flex gap-2 opacity-25">
-            <span className="h-6 w-6 rounded-full bg-white/60" />
+            <span className="h-6 w-6 rounded-full bg-slate-300/70" />
             <span className="h-6 w-6 rounded-full bg-secondary/80" />
-            <span className="h-6 w-6 rounded-full bg-blue-300/80" />
+            <span className="h-6 w-6 rounded-full bg-slate-300/80" />
           </div>
         </section>
       );
     }
 
     if (t.variant === "gradient-ld") {
+      // Keep header gradient; switch body to neutral surface (no blue background).
       return (
         <section
           role="region"
           aria-labelledby={`tile-${t.key}-title`}
-          className={`${t.spans} text-white ${cardBase} p-4 relative overflow-hidden`}
-          style={{
-            background:
-              "var(--tile-ld-gradient, linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%))",
-          }}
+          className={`${t.spans} ${cardPlain} p-0 relative overflow-hidden`}
         >
           <HeaderBar
             id={`tile-${t.key}-title`}
             title={t.title}
             right={<button className={`${pillLinkBase} ${pillOnGradientHeader}`}>Know More</button>}
-            className="mb-2"
+            className=""
           />
-          <p className="mt-2 text-sm text-white/90">Upskill with curated learning content and programs.</p>
-          <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-white/15" aria-hidden="true" />
+          <div className="px-4 pt-2 pb-4">
+            <p className="mt-1 text-sm text-slate-700">
+              Upskill with curated learning content and programs.
+            </p>
+          </div>
+          <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-slate-200" aria-hidden="true" />
         </section>
       );
     }
 
     if (t.variant === "tinted-blue") {
       return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardTinted} p-4`}>
+        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardBase} bg-gray-50 p-4`}>
           <HeaderBar
             id={`tile-${t.key}-title`}
             title={t.title}
@@ -246,7 +249,7 @@ export default function BentoGrid() {
           />
           <div className="grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-10 rounded-lg bg-blue-100" aria-hidden="true" />
+              <div key={i} className="h-10 rounded-lg bg-gray-100" aria-hidden="true" />
             ))}
           </div>
         </section>
@@ -362,7 +365,7 @@ export default function BentoGrid() {
             {["Division 2025 Edition 1", "Division 2025 Edition 2", "Division 2025 Edition 3"].map((label) => (
               <button
                 key={label}
-                className="w-full h-10 rounded-full text-primary bg-blue-50 hover:bg-primary hover:text-white transition focus-ring"
+                className="w-full h-10 rounded-full text-primary bg-gray-50 hover:bg-primary hover:text-white transition focus-ring"
               >
                 {label}
               </button>
