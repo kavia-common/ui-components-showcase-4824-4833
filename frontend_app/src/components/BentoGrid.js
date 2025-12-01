@@ -273,15 +273,22 @@ export default function BentoGrid() {
 
     if (t.key === "meetings") {
       return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-5 ${t.minH} border border-gray-200`}>
+        <section
+          role="region"
+          aria-labelledby={`tile-${t.key}-title`}
+          className={`${t.spans} ${cardPlain} p-5 ${t.minH} border border-gray-200`}
+        >
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="More" className="mb-4" />
+          {/* Keep same 10-count layout; add subtle default borders on interactive subtiles */}
           <div className="grid grid-cols-10 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
               <InteractiveHover
                 key={i}
-                className="h-10 rounded-lg bg-gray-100 transition-colors duration-200 ease-out"
+                // Default 1px border (gray-200) to avoid hover layout shift; preserve rounded corners and spacing
+                className="h-10 rounded-lg bg-gray-100 transition-colors duration-200 ease-out border border-gray-200"
                 role="button"
                 ariaLabel={`Open day ${i + 1}`}
+                title={`Open day ${i + 1}`}
               />
             ))}
           </div>
@@ -291,33 +298,57 @@ export default function BentoGrid() {
 
     if (t.key === "ann") {
       return (
-        <section role="region" aria-labelledby={`tile-${t.key}-title`} className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}>
+        <section
+          role="region"
+          aria-labelledby={`tile-${t.key}-title`}
+          className={`${t.spans} ${cardPlain} p-3 sm:p-3.5`}
+        >
+          {/* Keep current unified header size and gradient */}
           <Header id={`tile-${t.key}-title`} title={t.title} actionLabel="Know More" className="mb-1.5" />
+          {/* Body: hero + 3 small subgrid items; responsive and balanced */}
           <div className="grid grid-cols-12 gap-1.5 sm:gap-2">
+            {/* Left hero media */}
             <InteractiveHover
               as="a"
               href="#"
               title="Open announcement hero"
               ariaLabel="Open announcement hero"
-              className="col-span-12 sm:col-span-8 rounded-lg overflow-hidden transition-colors duration-200 ease-out"
-              style={{ aspectRatio: "16 / 9", maxHeight: "120px", minHeight: "84px" }}
+              className="col-span-12 md:col-span-7 xl:col-span-7 rounded-lg overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
+              style={{ aspectRatio: "16 / 9", minHeight: "90px", maxHeight: "140px" }}
             >
               <div className="w-full h-full bg-gray-100" aria-hidden="true" />
             </InteractiveHover>
-            <div className="col-span-12 sm:col-span-4 grid grid-rows-1">
-              <InteractiveHover
-                as="a"
-                href="#"
-                title="Open secondary announcement"
-                ariaLabel="Open secondary announcement"
-                className="rounded-lg overflow-hidden transition-colors duration-200 ease-out"
-                style={{ aspectRatio: "16 / 10", maxHeight: "120px", minHeight: "70px" }}
-              >
-                <div className="w-full h-full bg-gray-100" aria-hidden="true" />
-              </InteractiveHover>
+
+            {/* Right subgrid of 3 items */}
+            <div className="col-span-12 md:col-span-5 xl:col-span-5">
+              <div className="grid grid-cols-3 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                {[
+                  { key: "a", ar: "1 / 1" },
+                  { key: "b", ar: "1 / 1" },
+                  { key: "c", ar: "1 / 1" },
+                ].map((it, idx) => (
+                  <InteractiveHover
+                    key={it.key}
+                    as="a"
+                    href="#"
+                    title={`Open announcement ${idx + 1}`}
+                    ariaLabel={`Open announcement ${idx + 1}`}
+                    className="rounded-md overflow-hidden transition-colors duration-200 ease-out border border-gray-200"
+                    style={{
+                      aspectRatio: it.ar,
+                      minHeight: "64px",
+                      maxHeight: "100px",
+                    }}
+                  >
+                    <div className="w-full h-full bg-gray-100" aria-hidden="true" />
+                  </InteractiveHover>
+                ))}
+              </div>
             </div>
           </div>
-          <p className="mt-0.5 text-[12px] sm:text-[13px] text-slate-700 line-clamp-1">
+
+          {/* Caption remains */}
+          <p className="mt-1 text-[12px] sm:text-[13px] text-slate-700 line-clamp-1">
             Highlights from across the organization this week.
           </p>
         </section>
