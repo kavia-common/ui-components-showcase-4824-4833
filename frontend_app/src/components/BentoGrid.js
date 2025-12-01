@@ -35,22 +35,29 @@ export default function BentoGrid() {
   const UNIFIED_HEADER_GRADIENT = "linear-gradient(45deg, #af2497 10%, #902d9a 20%, #1840a0 100%)";
 
   // PUBLIC_INTERFACE
-  // Returns a slightly lighter variant of the header gradient for hover states.
-  // Kept inline to avoid Tailwind plugin changes.
-  const lighterHeaderGradient = "linear-gradient(45deg, #c73eaf 10%, #a545ad 20%, #2a57c0 100%)";
+  // Returns a lighter variant of the interaction hover gradient for sub-cards.
+  // Lightened ~10% vs previous hover using brighter stops + subtle white overlay for perceived lift.
+  const lighterHeaderGradient =
+    "linear-gradient(45deg, #d24dbb 10%, #b35ac2 22%, #3b66cd 100%)";
 
   // PUBLIC_INTERFACE
   // A reusable interactive wrapper that applies ONLY to actionable sub-cards/links/buttons.
   // It preserves padding/size (no layout shift) and adds smooth transitions.
   function InteractiveHover({ as: As = "div", className = "", children, title, ariaLabel, role, href, onClick, type, disabled }) {
     const baseStyle = {
+      // No base background so layout does not shift on hover.
       background: "transparent",
-      transition: "background 220ms ease, filter 220ms ease",
+      transition: "background 240ms ease, filter 240ms ease",
       willChange: "background, filter",
     };
+
+    // Compose a lightened hover with a subtle white overlay (~10% perceived lift)
+    const hoverBackground = `linear-gradient(0deg, rgba(255,255,255,0.12), rgba(255,255,255,0.12)), ${lighterHeaderGradient}`;
+
     const handleEnter = (e) => {
-      e.currentTarget.style.background = lighterHeaderGradient;
-      e.currentTarget.style.filter = "brightness(1.02) saturate(1.02)";
+      e.currentTarget.style.background = hoverBackground;
+      // Gentle boost to maintain readable contrast on text/icons
+      e.currentTarget.style.filter = "brightness(1.04) saturate(1.03)";
     };
     const handleLeave = (e) => {
       e.currentTarget.style.background = "transparent";
